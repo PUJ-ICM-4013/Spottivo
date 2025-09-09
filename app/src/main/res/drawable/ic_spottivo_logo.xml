@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    
+    <!-- Background Circle -->
+    <path
+        android:fillColor="@color/spottivo_primary"
+        android:pathData="M60,60m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+    
+    <!-- Letter S -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M45,35 Q35,25 25,35 Q25,45 35,45 L55,45 Q65,45 65,55 Q65,65 55,65 L35,65 Q25,65 25,75 Q25,85 35,85 L75,85 Q85,85 85,75 Q85,65 75,65 L55,65 Q45,65 45,55 Q45,45 55,45 L75,45 Q85,45 85,35 Q85,25 75,25 L45,25 Q35,25 35,35 Z" />
+    
+</vector>

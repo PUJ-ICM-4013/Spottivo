@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">Spottivo</string>
+    
+    <!-- Navigation -->
+    <string name="nav_map">Mapa</string>
+    <string name="nav_community">Comunidad</string>
+    <string name="nav_profile">Perfil</string>
+    
+    <!-- Map Screen -->
+    <string name="search_hint">Empieza tu búsqueda</string>
+    <string name="popular_places">Lugares populares en Bogotá</string>
+    
+    <!-- Community Screen -->
+    <string name="community_title">Comunidad</string>
+    <string name="messages_tab">Mensajes</string>
+    <string name="groups_tab">Grupos</string>
+    <string name="meet_chat">Meet Chat</string>
+    
+    <!-- Profile Screen -->
+    <string name="profile_title">Perfil</string>
+    <string name="activity_label">Actividad</string>
+    <string name="rewards_label">Recompensas</string>
+    <string name="configuration_label">Configuración</string>
+    <string name="your_profile">Tu Perfil</string>
+    
+    <!-- Common -->
+    <string name="loading">Cargando...</string>
+    <string name="error">Error</string>
+    <string name="retry">Reintentar</string>
+</resources>

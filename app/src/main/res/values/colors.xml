@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spottivo Brand Colors -->
+    <color name="primary_purple">#8B5CF6</color>
+    <color name="primary_purple_dark">#7C3AED</color>
+    <color name="primary_purple_light">#A78BFA</color>
+    <color name="accent_green">#10B981</color>
+    
+    <!-- Legacy colors for compatibility -->
+    <color name="spottivo_primary">#8B5CF6</color>
+    <color name="spottivo_primary_dark">#7C3AED</color>
+    <color name="spottivo_primary_light">#A78BFA</color>
+    <color name="spottivo_accent">#EC4899</color>
+    
+    <!-- Background Colors -->
+    <color name="background_dark">#1F1F1F</color>
+    <color name="background_light">#FFFFFF</color>
+    <color name="surface_dark">#2D2D2D</color>
+    <color name="surface_light">#F5F5F5</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary_dark">#FFFFFF</color>
+    <color name="text_primary_light">#000000</color>
+    <color name="text_secondary">#9CA3AF</color>
+    
+    <!-- Standard Colors -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="gray_light">#F3F4F6</color>
+    <color name="gray_medium">#6B7280</color>
+    <color name="gray_dark">#374151</color>
+</resources>
