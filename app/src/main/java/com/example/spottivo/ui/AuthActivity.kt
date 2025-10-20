@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.spottivo.ui.screens.LoginScreen
 import com.example.spottivo.ui.screens.RegisterScreen
+import com.example.spottivo.ui.screens.BusinessRegisterScreen
 import com.example.spottivo.ui.theme.SpottivoTheme
 
 class AuthActivity : ComponentActivity() {
@@ -60,6 +61,23 @@ fun AuthNavigation(
         composable("register") {
             RegisterScreen(
                 onNavigateToLogin = {
+                    navController.popBackStack()
+                },
+                onNavigateToBusiness = {
+                    navController.navigate("business_register")
+                },
+                onRegisterSuccess = onAuthSuccess
+            )
+        }
+        
+        composable("business_register") {
+            BusinessRegisterScreen(
+                onNavigateToLogin = {
+                    navController.navigate("login") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onNavigateToRegular = {
                     navController.popBackStack()
                 },
                 onRegisterSuccess = onAuthSuccess

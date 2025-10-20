@@ -23,11 +23,13 @@ import androidx.compose.ui.unit.sp
 import com.example.spottivo.ui.theme.PrimaryPurple
 import com.example.spottivo.ui.theme.TextPrimaryLight
 import com.example.spottivo.ui.theme.GrayDark
+import com.example.spottivo.ui.theme.AccentGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit = {},
+    onNavigateToBusiness: () -> Unit = {},
     onRegisterSuccess: () -> Unit = {}
 ) {
     var name by remember { mutableStateOf("") }
@@ -271,6 +273,29 @@ fun RegisterScreen(
         }
         
         Spacer(modifier = Modifier.weight(1f))
+        
+        // Business Registration Link
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "¿Tienes un negocio deportivo? ",
+                color = Color.Gray,
+                fontSize = 14.sp
+            )
+            Text(
+                text = "Regístrate aquí",
+                color = AccentGreen,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.clickable {
+                    onNavigateToBusiness()
+                }
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
         
         // Login Link
         Row(
