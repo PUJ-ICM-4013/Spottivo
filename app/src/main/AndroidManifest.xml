@@ -36,6 +36,11 @@
             android:exported="false"
             android:theme="@style/Theme.Spottivo.NoActionBar" />
 
+        <activity
+            android:name=".ui.AuthActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Spottivo.NoActionBar" />
+
         <!-- API Key de Google Maps -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
