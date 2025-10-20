@@ -1,8 +1,7 @@
-package com.example.spottivo.model.place
+package com.example.spottivo.domain.model.place
 
-import com.example.spottivo.model.core.GeoLocation
-import com.example.spottivo.model.core.Id
-import com.example.spottivo.model.user.Usuario
+import com.example.spottivo.domain.model.core.GeoLocation
+import com.example.spottivo.domain.model.core.Id
 
 data class EspacioDeportivo(
     val id: Id,

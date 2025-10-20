@@ -1,8 +1,8 @@
-package com.example.spottivo.model.booking
+package com.example.spottivo.domain.model.booking
 
-import com.example.spottivo.model.core.EstadoReserva
-import com.example.spottivo.model.core.Horario
-import com.example.spottivo.model.core.Id
+import com.example.spottivo.domain.model.core.EstadoReserva
+import com.example.spottivo.domain.model.core.Horario
+import com.example.spottivo.domain.model.core.Id
 import java.time.LocalDateTime
 
 data class Reserva(

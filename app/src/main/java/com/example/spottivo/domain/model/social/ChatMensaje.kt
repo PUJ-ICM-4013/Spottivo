@@ -1,6 +1,6 @@
-package com.example.spottivo.model.social
+package com.example.spottivo.domain.model.social
 
-import com.example.spottivo.model.core.Id
+import com.example.spottivo.domain.model.core.Id
 import java.time.LocalDateTime
 
 data class Chat(

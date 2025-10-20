@@ -1,7 +1,8 @@
-package com.example.spottivo.model.user
+package com.example.spottivo.domain.model.user
 
-import com.example.spottivo.model.core.Id
-import com.example.spottivo.model.core.RolUsuario
+import com.example.spottivo.domain.model.core.GeoLocation
+import com.example.spottivo.domain.model.core.Id
+import com.example.spottivo.domain.model.core.RolUsuario
 
 /**
  * Usuario base (abstracto) con herencia sellada para roles.
@@ -23,7 +24,7 @@ sealed class Usuario(
         override val fotoPerfil: String?,
         val preferencias: List<Id>,       // lista de Deporte.id
         val esPremium: Boolean,
-        val ubicacionActual: com.example.spottivo.model.core.GeoLocation?
+        val ubicacionActual: GeoLocation?
     ) : Usuario(id, nombre, email, passwordHash, fotoPerfil, RolUsuario.DEPORTISTA)
 
     data class Propietario(

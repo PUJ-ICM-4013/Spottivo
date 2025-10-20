@@ -1,6 +1,6 @@
-package com.example.spottivo.model.commerce
+package com.example.spottivo.domain.model.commerce
 
-import com.example.spottivo.model.core.Id
+import com.example.spottivo.domain.model.core.Id
 
 enum class TipoPlan { USUARIO, PROPIETARIO }
 

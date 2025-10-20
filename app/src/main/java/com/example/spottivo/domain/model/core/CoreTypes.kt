@@ -1,7 +1,6 @@
-package com.example.spottivo.model.core
+package com.example.spottivo.domain.model.core
 
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 
 @JvmInline

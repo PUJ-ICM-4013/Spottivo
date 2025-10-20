@@ -1,6 +1,6 @@
-package com.example.spottivo.model.place
+package com.example.spottivo.domain.model.place
 
-import com.example.spottivo.model.core.Id
+import com.example.spottivo.domain.model.core.Id
 
 data class Deporte(
     val id: Id,
