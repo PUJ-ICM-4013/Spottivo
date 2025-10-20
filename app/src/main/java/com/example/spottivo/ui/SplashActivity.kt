@@ -26,9 +26,9 @@ class SplashActivity : AppCompatActivity() {
         // Hide status bar for full screen experience
         window.statusBarColor = getColor(R.color.background_dark)
 
-        // Navigate to MainActivity after splash timeout
+        // Navigate to AuthActivity after splash timeout
         Handler(Looper.getMainLooper()).postDelayed({
-            startActivity(Intent(this, MainActivity::class.java))
+            startActivity(Intent(this, AuthActivity::class.java))
             finish()
         }, splashTimeOut)
     }
