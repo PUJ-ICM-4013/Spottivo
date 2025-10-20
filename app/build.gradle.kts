@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -40,7 +41,16 @@ android {
 }
 
 dependencies {
+    // BOM de Firebase para alinear versiones
+    implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
 
+    // ---- Firebase que vas a usar ----
+    implementation("com.google.firebase:firebase-storage-ktx")   // Cloud Storage
+    implementation("com.google.firebase:firebase-firestore-ktx") // Firestore (metadatos)
+    implementation("com.google.firebase:firebase-auth-ktx")      // (Opcional) si harás reglas por usuario
+
+    // Mostrar imágenes desde URL (Storage) en Compose
+    implementation("io.coil-kt:coil-compose:2.6.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -49,9 +59,6 @@ dependencies {
     implementation("org.osmdroid:osmdroid-android:6.1.18")
     implementation("org.osmdroid:osmdroid-wms:6.1.18")
     implementation ("androidx.compose.material3:material3")
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
-    implementation("com.google.android.gms:play-services-location:21.3.0")
-    implementation("androidx.compose.material:material-icons-extended:1.7.3")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.maps.android:maps-compose:4.3.3")
