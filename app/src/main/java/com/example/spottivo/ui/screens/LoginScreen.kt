@@ -20,20 +20,32 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.spottivo.ui.theme.PrimaryPurple
 import com.example.spottivo.ui.theme.TextPrimaryLight
 import com.example.spottivo.ui.theme.GrayDark
+import com.example.spottivo.viewmodel.LoginViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onNavigateToRegister: () -> Unit = {},
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
+    viewModel: LoginViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
+    
+    val uiState by viewModel.uiState.collectAsState()
+    
+    // Manejar el éxito del login
+    LaunchedEffect(uiState.isLoginSuccessful) {
+        if (uiState.isLoginSuccessful) {
+            onLoginSuccess()
+            viewModel.resetLoginState()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -103,15 +115,32 @@ fun LoginScreen(
             shape = RoundedCornerShape(12.dp)
         )
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Error Message
+        uiState.errorMessage?.let { errorMessage ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.Red.copy(alpha = 0.1f)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = errorMessage,
+                    color = Color.Red,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         
         // Login Button
         Button(
             onClick = {
-                isLoading = true
-                // Simulate login process
-                // In real app, this would call authentication service
-                onLoginSuccess()
+                viewModel.clearError()
+                viewModel.login(email, password)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -121,9 +150,9 @@ fun LoginScreen(
                 contentColor = Color.White
             ),
             shape = RoundedCornerShape(12.dp),
-            enabled = email.isNotBlank() && password.isNotBlank() && !isLoading
+            enabled = email.isNotBlank() && password.isNotBlank() && !uiState.isLoading
         ) {
-            if (isLoading) {
+            if (uiState.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     color = Color.White,

@@ -20,17 +20,20 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.spottivo.ui.theme.PrimaryPurple
 import com.example.spottivo.ui.theme.TextPrimaryLight
 import com.example.spottivo.ui.theme.GrayDark
 import com.example.spottivo.ui.theme.AccentGreen
+import com.example.spottivo.viewmodel.RegisterViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit = {},
     onNavigateToBusiness: () -> Unit = {},
-    onRegisterSuccess: () -> Unit = {}
+    onRegisterSuccess: () -> Unit = {},
+    viewModel: RegisterViewModel = viewModel()
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -38,7 +41,16 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
+    
+    val uiState by viewModel.uiState.collectAsState()
+    
+    // Manejar el éxito del registro
+    LaunchedEffect(uiState.isRegisterSuccessful) {
+        if (uiState.isRegisterSuccessful) {
+            onRegisterSuccess()
+            viewModel.resetRegisterState()
+        }
+    }
     
     // Validation states
     var nameError by remember { mutableStateOf("") }
@@ -241,10 +253,8 @@ fun RegisterScreen(
         Button(
             onClick = {
                 if (isFormValid()) {
-                    isLoading = true
-                    // Simulate registration process
-                    // In real app, this would call authentication service
-                    onRegisterSuccess()
+                    viewModel.register(name, email, password)
+                    viewModel.clearError()
                 }
             },
             modifier = Modifier
@@ -255,9 +265,9 @@ fun RegisterScreen(
                 contentColor = Color.White
             ),
             shape = RoundedCornerShape(12.dp),
-            enabled = !isLoading
+            enabled = !uiState.isLoading
         ) {
-            if (isLoading) {
+            if (uiState.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     color = Color.White,
@@ -268,6 +278,23 @@ fun RegisterScreen(
                     text = "Crear cuenta",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
+                )
+            }
+        }
+        
+        // Error message
+        if (uiState.errorMessage.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Text(
+                    text = uiState.errorMessage,
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
         }
