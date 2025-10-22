@@ -18,7 +18,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.spottivo.R
 import com.example.spottivo.ui.theme.PrimaryPurple
-import com.example.spottivo.ui.viewmodels.ProfileViewModel
+import com.example.spottivo.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(navController: NavController,

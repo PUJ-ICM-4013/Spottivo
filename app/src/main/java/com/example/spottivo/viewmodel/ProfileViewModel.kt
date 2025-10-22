@@ -1,9 +1,9 @@
-package com.example.spottivo.ui.viewmodels
+package com.example.spottivo.viewmodel
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
 
 class ProfileViewModel : ViewModel() {
     var userName by mutableStateOf("Usuario Spottivo")

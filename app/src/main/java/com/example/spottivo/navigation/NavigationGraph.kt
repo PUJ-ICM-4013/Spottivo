@@ -9,7 +9,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.spottivo.ui.screens.*
-import com.example.spottivo.ui.viewmodels.ProfileViewModel
+import com.example.spottivo.viewmodel.ProfileViewModel
 
 @Composable
 fun NavigationGraph(navController: NavHostController, innerPadding: PaddingValues) {
