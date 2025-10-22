@@ -1,11 +1,13 @@
 package com.example.spottivo.ui
-
+// S
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
 import com.example.spottivo.R
+import com.google.firebase.FirebaseApp
+import com.google.firebase.analytics.FirebaseAnalytics
 
 class SplashActivity : AppCompatActivity() {
 
@@ -14,13 +16,19 @@ class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
+        
+        // Inicializa Firebase y registra evento de apertura
+        FirebaseApp.initializeApp(this)
+        val firebaseAnalytics = FirebaseAnalytics.getInstance(this)
+        val params = Bundle().apply { putString(FirebaseAnalytics.Param.METHOD, "splash") }
+        firebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, params)
 
         // Hide status bar for full screen experience
         window.statusBarColor = getColor(R.color.background_dark)
 
-        // Navigate to MainActivity after splash timeout
+        // Navigate to AuthActivity after splash timeout
         Handler(Looper.getMainLooper()).postDelayed({
-            startActivity(Intent(this, MainActivity::class.java))
+            startActivity(Intent(this, AuthActivity::class.java))
             finish()
         }, splashTimeOut)
     }

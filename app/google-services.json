@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "137971205955",
+    "project_id": "spottivo-33658",
+    "storage_bucket": "spottivo-33658.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:137971205955:android:38ae26a7863712130551f6",
+        "android_client_info": {
+          "package_name": "com.example.spottivo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCg35G0XmzpHjBJuDH770Aq4VusUy93-FU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
