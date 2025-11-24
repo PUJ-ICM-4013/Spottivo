@@ -3,6 +3,8 @@ package com.example.spottivo.navigation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -38,6 +40,9 @@ fun NavigationGraph(navController: NavHostController, innerPadding: PaddingValue
                     android.util.Log.e("NavigationGraph", "   friendName: '$friendName'")
                     android.util.Log.e("NavigationGraph", "   Ruta: '$route'")
                     navController.navigate(route)
+                },
+                onNavigateToCommunity = { communityId ->
+                    navController.navigate(Screen.CommunityDetail.createRoute(communityId))
                 }
             )
         }
@@ -77,6 +82,30 @@ fun NavigationGraph(navController: NavHostController, innerPadding: PaddingValue
                 isOnline = isOnline,
                 onBack = { navController.popBackStack() }
             )
+        }
+        
+        // Ruta de detalle de comunidad
+        composable(
+            route = Screen.CommunityDetail.route,
+            arguments = listOf(
+                navArgument("communityId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val communityId = backStackEntry.arguments?.getString("communityId") ?: ""
+            
+            // Obtener la comunidad del ViewModel
+            val communityListViewModel: com.example.spottivo.viewmodel.CommunityListViewModel = viewModel()
+            val allCommunities by communityListViewModel.allCommunities.collectAsState()
+            val myCommunities by communityListViewModel.myCommunities.collectAsState()
+            
+            val community = (allCommunities + myCommunities).find { it.id == communityId }
+            
+            if (community != null) {
+                CommunityDetailScreen(
+                    community = community,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

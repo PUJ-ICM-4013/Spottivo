@@ -33,7 +33,9 @@ import com.example.spottivo.data.FriendRequestRepository
 import com.example.spottivo.data.models.FriendRequest
 import com.example.spottivo.ui.theme.PrimaryPurple
 import com.example.spottivo.viewmodel.CommunityViewModel
+import com.example.spottivo.viewmodel.CommunityListViewModel
 import com.example.spottivo.viewmodel.Friend
+import com.example.spottivo.model.Community
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -42,15 +44,20 @@ import java.util.*
 @Composable
 fun CommunityScreen(
     viewModel: CommunityViewModel = viewModel(),
-    onNavigateToChat: (String, String, String, Boolean) -> Unit = { _, _, _, _ -> }
+    communityListViewModel: CommunityListViewModel = viewModel(),
+    onNavigateToChat: (String, String, String, Boolean) -> Unit = { _, _, _, _ -> },
+    onNavigateToCommunity: (String) -> Unit = { }
 ) {
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Mensajes", "Solicitudes", "Grupos")
     
     val friends by viewModel.friends.collectAsState()
+    val allCommunities by communityListViewModel.allCommunities.collectAsState()
+    val myCommunities by communityListViewModel.myCommunities.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     
     var showAddFriendDialog by remember { mutableStateOf(false) }
+    var showCreateCommunityDialog by remember { mutableStateOf(false) }
     var pendingRequests by remember { mutableStateOf<List<FriendRequest>>(emptyList()) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -66,16 +73,30 @@ fun CommunityScreen(
     
     Scaffold(
         floatingActionButton = {
-            if (selectedTabIndex == 0) {
-                FloatingActionButton(
-                    onClick = { showAddFriendDialog = true },
-                    containerColor = PrimaryPurple
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Añadir amigo",
-                        tint = Color.White
-                    )
+            when (selectedTabIndex) {
+                0 -> {
+                    FloatingActionButton(
+                        onClick = { showAddFriendDialog = true },
+                        containerColor = PrimaryPurple
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Añadir amigo",
+                            tint = Color.White
+                        )
+                    }
+                }
+                2 -> {
+                    FloatingActionButton(
+                        onClick = { showCreateCommunityDialog = true },
+                        containerColor = PrimaryPurple
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Crear comunidad",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }
@@ -271,26 +292,108 @@ fun CommunityScreen(
                 }
             }
             2 -> {
-                // Pestaña de Grupos (placeholder)
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_community),
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "Grupos próximamente",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                // Pestaña de Grupos
+                var showGroupSubTabs by remember { mutableStateOf(0) }
+                val groupTabs = listOf("Mis Grupos", "Explorar")
+                
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Sub-pestañas
+                    TabRow(selectedTabIndex = showGroupSubTabs) {
+                        groupTabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = showGroupSubTabs == index,
+                                onClick = { showGroupSubTabs = index },
+                                text = { Text(title) }
+                            )
+                        }
+                    }
+                    
+                    when (showGroupSubTabs) {
+                        0 -> {
+                            // Mis Grupos
+                            if (myCommunities.isEmpty()) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_community),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(64.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = "No estás en ningún grupo",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = "Explora o crea uno nuevo",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            } else {
+                                LazyColumn(
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    contentPadding = PaddingValues(vertical = 8.dp)
+                                ) {
+                                    items(myCommunities) { community ->
+                                        CommunityCard(
+                                            community = community,
+                                            isMember = true,
+                                            showJoinButton = false,
+                                            onClick = { onNavigateToCommunity(community.id) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        1 -> {
+                            // Explorar Comunidades
+                            if (allCommunities.isEmpty()) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        CircularProgressIndicator()
+                                        Text(
+                                            text = "Cargando comunidades...",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            } else {
+                                LazyColumn(
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    contentPadding = PaddingValues(vertical = 8.dp)
+                                ) {
+                                    items(allCommunities) { community ->
+                                        val isMember = myCommunities.any { it.id == community.id }
+                                        CommunityCard(
+                                            community = community,
+                                            isMember = isMember,
+                                            showJoinButton = true,
+                                            onJoin = {
+                                                communityListViewModel.joinCommunity(community.id)
+                                                Toast.makeText(context, "Te uniste a ${community.nombre}", Toast.LENGTH_SHORT).show()
+                                            },
+                                            onClick = { onNavigateToCommunity(community.id) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -305,6 +408,17 @@ fun CommunityScreen(
                     viewModel.refresh()
                     showAddFriendDialog = false
                 }
+            )
+        }
+        
+        // Dialog para crear comunidad
+        if (showCreateCommunityDialog) {
+            CreateCommunityDialog(
+                onDismiss = { showCreateCommunityDialog = false },
+                onCommunityCreated = { communityId ->
+                    showCreateCommunityDialog = false
+                },
+                communityListViewModel = communityListViewModel
             )
         }
     }

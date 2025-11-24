@@ -15,4 +15,11 @@ sealed class Screen(val route: String, val label: String) {
             return "chat/$friendId/$friendName/$friendPhotoUrl/$isOnline"
         }
     }
+    
+    // Ruta de detalle de comunidad
+    object CommunityDetail : Screen("community_detail/{communityId}", "Detalle de Comunidad") {
+        fun createRoute(communityId: String): String {
+            return "community_detail/$communityId"
+        }
+    }
 }
