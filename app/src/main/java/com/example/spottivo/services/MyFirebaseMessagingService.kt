@@ -46,6 +46,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val type = data["type"] ?: "general"
 
         when (type) {
+            "chat_message" -> {
+                val senderName = data["senderName"] ?: "Nuevo mensaje"
+                val message = data["message"] ?: ""
+                showChatNotification(senderName, message)
+            }
             "friend_online" -> {
                 showNotification(title, body)
             }
@@ -57,6 +62,40 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 showNotification(title, body)
             }
         }
+    }
+    
+    private fun showChatNotification(senderName: String, message: String) {
+        val channelId = "chat_messages"
+        
+        // Crear canal de notificación para mensajes
+        val channel = NotificationChannel(
+            channelId,
+            "Mensajes de Chat",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Notificaciones de mensajes de chat"
+            enableVibration(true)
+            enableLights(true)
+        }
+        
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
+
+        // Crear notificación
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle(senderName)
+            .setContentText(message)
+            .setSmallIcon(R.drawable.ic_community)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(message)
+            )
+            .build()
+
+        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+        Log.d(TAG, "Notificación de chat mostrada: $senderName - $message")
     }
 
     private fun showNotification(title: String, message: String) {

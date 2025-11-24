@@ -6,11 +6,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.spottivo.ui.screens.*
 import com.example.spottivo.viewmodel.ProfileViewModel
 import com.example.spottivo.viewmodel.MapViewModel
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun NavigationGraph(navController: NavHostController, innerPadding: PaddingValues) {
@@ -25,7 +29,18 @@ fun NavigationGraph(navController: NavHostController, innerPadding: PaddingValue
     ) {
         composable(Screen.Search.route) { SearchScreen() }
         composable(Screen.Map.route) { FindMyMapScreen(viewModel = mapViewModel) }
-        composable(Screen.Community.route) { CommunityScreen() }
+        composable(Screen.Community.route) { 
+            CommunityScreen(
+                onNavigateToChat = { friendId, friendName, friendPhotoUrl, isOnline ->
+                    val route = Screen.Chat.createRoute(friendId, friendName, friendPhotoUrl, isOnline)
+                    android.util.Log.e("NavigationGraph", "🚨 NAVEGANDO AL CHAT")
+                    android.util.Log.e("NavigationGraph", "   friendId: '$friendId'")
+                    android.util.Log.e("NavigationGraph", "   friendName: '$friendName'")
+                    android.util.Log.e("NavigationGraph", "   Ruta: '$route'")
+                    navController.navigate(route)
+                }
+            )
+        }
 
         composable("profile") {
             ProfileScreen(navController = navController, viewModel = profileViewModel)
@@ -33,5 +48,36 @@ fun NavigationGraph(navController: NavHostController, innerPadding: PaddingValue
         composable("edit_profile") {
             EditProfileScreen(navController = navController, viewModel = profileViewModel)
         }
+        
+        // Ruta del chat
+        composable(
+            route = Screen.Chat.route,
+            arguments = listOf(
+                navArgument("friendId") { type = NavType.StringType },
+                navArgument("friendName") { type = NavType.StringType },
+                navArgument("friendPhotoUrl") { type = NavType.StringType },
+                navArgument("isOnline") { type = NavType.BoolType }
+            )
+        ) { backStackEntry ->
+            val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
+            val friendName = URLDecoder.decode(
+                backStackEntry.arguments?.getString("friendName") ?: "",
+                StandardCharsets.UTF_8.toString()
+            )
+            val friendPhotoUrl = URLDecoder.decode(
+                backStackEntry.arguments?.getString("friendPhotoUrl") ?: "",
+                StandardCharsets.UTF_8.toString()
+            )
+            val isOnline = backStackEntry.arguments?.getBoolean("isOnline") ?: false
+            
+            ChatScreen(
+                friendId = friendId,
+                friendName = friendName,
+                friendPhotoUrl = friendPhotoUrl,
+                isOnline = isOnline,
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
 }
+

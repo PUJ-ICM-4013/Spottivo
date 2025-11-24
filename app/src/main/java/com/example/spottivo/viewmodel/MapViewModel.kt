@@ -38,6 +38,9 @@ class MapViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
+    private val _myLocation = MutableStateFlow<FriendLocation?>(null)
+    val myLocation: StateFlow<FriendLocation?> = _myLocation.asStateFlow()
+    
     private var locationsListener: ListenerRegistration? = null
     
     companion object {
@@ -103,8 +106,8 @@ class MapViewModel : ViewModel() {
                             for (doc in snapshot.documents) {
                                 val userId = doc.id
                                 
-                                // Solo incluir amigos, no a ti mismo
-                                if (!friendIds.contains(userId) || userId == currentUserId) continue
+                                // Incluir amigos Y al usuario actual
+                                if (!friendIds.contains(userId) && userId != currentUserId) continue
                                 
                                 try {
                                     // Obtener datos de ubicación
@@ -128,7 +131,7 @@ class MapViewModel : ViewModel() {
                                         locations.add(
                                             FriendLocation(
                                                 userId = userId,
-                                                nombre = nombre,
+                                                nombre = if (userId == currentUserId) "Tú" else nombre,
                                                 email = email,
                                                 photoUrl = photoUrl,
                                                 latitude = latitude,
@@ -137,6 +140,7 @@ class MapViewModel : ViewModel() {
                                                 lastUpdate = timestamp
                                             )
                                         )
+                                        Log.d(TAG, "📍 Agregado: ${if (userId == currentUserId) "Tú" else nombre} - foto: ${photoUrl.take(30)}")
                                     }
                                 } catch (e: Exception) {
                                     Log.e(TAG, "Error procesando ubicación de $userId", e)
@@ -218,12 +222,66 @@ class MapViewModel : ViewModel() {
     }
     
     /**
+     * Obtiene la ubicación del usuario actual desde Firestore
+     */
+    suspend fun getCurrentUserLocation(): FriendLocation? = withContext(Dispatchers.IO) {
+        val currentUserId = auth.currentUser?.uid ?: return@withContext null
+        
+        try {
+            // Obtener ubicación guardada
+            val locationDoc = firestore.collection("locations")
+                .document(currentUserId)
+                .get()
+                .await()
+            
+            if (!locationDoc.exists()) {
+                Log.w(TAG, "⚠️ Usuario no tiene ubicación guardada")
+                return@withContext null
+            }
+            
+            val latitude = locationDoc.getDouble("latitude") ?: return@withContext null
+            val longitude = locationDoc.getDouble("longitude") ?: return@withContext null
+            val timestamp = locationDoc.getLong("timestamp") ?: System.currentTimeMillis()
+            
+            // Obtener datos del usuario
+            val userDoc = firestore.collection("users")
+                .document(currentUserId)
+                .get()
+                .await()
+            
+            val nombre = userDoc.getString("nombre") ?: "Tú"
+            val email = userDoc.getString("email") ?: ""
+            val photoUrl = userDoc.getString("photoUrl") ?: ""
+            
+            val location = FriendLocation(
+                userId = currentUserId,
+                nombre = "Tú",
+                email = email,
+                photoUrl = photoUrl,
+                latitude = latitude,
+                longitude = longitude,
+                isOnline = true,
+                lastUpdate = timestamp
+            )
+            
+            _myLocation.value = location
+            Log.d(TAG, "📍 Mi ubicación obtenida: ($latitude, $longitude)")
+            
+            location
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error obteniendo mi ubicación", e)
+            null
+        }
+    }
+    
+    /**
      * Refrescar manualmente las ubicaciones
      */
     fun refresh() {
         // El listener ya actualiza automáticamente, pero por si acaso
         viewModelScope.launch {
             _isLoading.value = true
+            getCurrentUserLocation()
             // Esperar un momento para dar feedback visual
             kotlinx.coroutines.delay(500)
             _isLoading.value = false

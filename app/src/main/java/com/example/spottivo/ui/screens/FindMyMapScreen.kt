@@ -86,6 +86,12 @@ fun FindMyMapScreen(
     val friendsLocations by viewModel.friendsLocations.collectAsState()
     val selectedFriend by viewModel.selectedFriend.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val myLocation by viewModel.myLocation.collectAsState()
+    
+    // Cargar ubicación del usuario al iniciar
+    LaunchedEffect(Unit) {
+        viewModel.getCurrentUserLocation()
+    }
     
     // Debug: Log cuando cambien las ubicaciones
     LaunchedEffect(friendsLocations.size) {
@@ -213,9 +219,25 @@ fun FindMyMapScreen(
                         override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean = false
                         override fun longPressHelper(p: GeoPoint?): Boolean {
                             val dest = p ?: return false
-                            val origin: GeoPoint = myLocationOverlay?.myLocation
-                                ?.let { GeoPoint(it.latitude, it.longitude) }
-                                ?: GeoPoint(4.60971, -74.08175)
+                            
+                            // Intentar obtener ubicación en este orden:
+                            // 1. GPS real (MyLocationOverlay)
+                            // 2. Ubicación guardada en Firestore
+                            // 3. Centro del mapa (fallback final)
+                            val origin = when {
+                                myLocationOverlay?.myLocation != null -> {
+                                    val loc = myLocationOverlay!!.myLocation
+                                    GeoPoint(loc.latitude, loc.longitude)
+                                }
+                                myLocation != null -> {
+                                    Toast.makeText(ctx, "Usando ubicación guardada", Toast.LENGTH_SHORT).show()
+                                    GeoPoint(myLocation!!.latitude, myLocation!!.longitude)
+                                }
+                                else -> {
+                                    Toast.makeText(ctx, "Usando centro del mapa (configura tu ubicación)", Toast.LENGTH_SHORT).show()
+                                    this@apply.mapCenter as GeoPoint
+                                }
+                            }
                             
                             scope.launch {
                                 val result = fetchOsrmRoute(httpClient, origin, dest)
@@ -247,7 +269,7 @@ fun FindMyMapScreen(
                                 destinationMarker = marker
                                 
                                 this@apply.invalidate()
-                                Toast.makeText(ctx, "Ruta: ${"%.1f".format(result.distanceKm)} km", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(ctx, "Ruta: ${"%.1f".format(result.distanceKm)} km (${result.durationMin.toInt()} min)", Toast.LENGTH_LONG).show()
                             }
                             return true
                         }
@@ -268,7 +290,7 @@ fun FindMyMapScreen(
             }
         )
         
-        // Controles flotantes
+        // Controles flotantes (lado derecho)
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -290,12 +312,27 @@ fun FindMyMapScreen(
             FloatingActionButton(
                 onClick = {
                     mapView?.let { mv ->
-                        val myLocation = myLocationOverlay?.myLocation
-                        if (myLocation != null) {
-                            mv.controller.animateTo(
-                                GeoPoint(myLocation.latitude, myLocation.longitude)
-                            )
-                            mv.controller.setZoom(16.0)
+                        // Intentar GPS primero, luego ubicación guardada
+                        val gpsLocation = myLocationOverlay?.myLocation
+                        val savedLocation = myLocation
+                        
+                        when {
+                            gpsLocation != null -> {
+                                mv.controller.animateTo(
+                                    GeoPoint(gpsLocation.latitude, gpsLocation.longitude)
+                                )
+                                mv.controller.setZoom(16.0)
+                            }
+                            savedLocation != null -> {
+                                mv.controller.animateTo(
+                                    GeoPoint(savedLocation.latitude, savedLocation.longitude)
+                                )
+                                mv.controller.setZoom(16.0)
+                                Toast.makeText(context, "Ubicación guardada", Toast.LENGTH_SHORT).show()
+                            }
+                            else -> {
+                                Toast.makeText(context, "Ubicación no disponible", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                 },
@@ -305,6 +342,65 @@ fun FindMyMapScreen(
                     Icons.Filled.GpsFixed,
                     contentDescription = "Mi ubicación"
                 )
+            }
+        }
+        
+        // Controles de zoom y borrar ruta (lado izquierdo)
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Botón para borrar ruta
+            if (routePolyline != null || destinationMarker != null) {
+                FloatingActionButton(
+                    onClick = {
+                        mapView?.let { mv ->
+                            routePolyline?.let { mv.overlays.remove(it) }
+                            destinationMarker?.let { mv.overlays.remove(it) }
+                            routePolyline = null
+                            destinationMarker = null
+                            mv.invalidate()
+                            Toast.makeText(context, "Ruta borrada", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = "Borrar ruta",
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+            
+            // Botón Zoom In (+)
+            SmallFloatingActionButton(
+                onClick = {
+                    mapView?.let { mv ->
+                        val currentZoom = mv.zoomLevelDouble
+                        mv.controller.setZoom(currentZoom + 1.0)
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ) {
+                Text("+", style = MaterialTheme.typography.headlineMedium)
+            }
+            
+            // Botón Zoom Out (-)
+            SmallFloatingActionButton(
+                onClick = {
+                    mapView?.let { mv ->
+                        val currentZoom = mv.zoomLevelDouble
+                        mv.controller.setZoom(currentZoom - 1.0)
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ) {
+                Text("−", style = MaterialTheme.typography.headlineMedium)
             }
         }
         
@@ -421,9 +517,12 @@ private suspend fun updateFriendMarkers(
             // Crear nuevo marker estilo FindMy
             android.util.Log.d("FindMyMapScreen", "    + Creando marker FindMy")
             try {
-                // Crear marker con placeholder primero (círculo verde)
+                // Determinar si es el usuario actual
+                val isCurrentUser = friend.nombre == "Tú"
+                
+                // Crear marker con placeholder primero (círculo verde o azul)
                 val placeholderIcon = withContext(Dispatchers.IO) {
-                    createPlaceholderIcon(context)
+                    createPlaceholderIcon(context, isCurrentUser)
                 }
                 
                 val marker = Marker(mapView).apply {
@@ -446,7 +545,7 @@ private suspend fun updateFriendMarkers(
                 scope.launch {
                     try {
                         val photoIcon = withContext(Dispatchers.IO) {
-                            createCircularMarkerIcon(context, friend)
+                            createCircularMarkerIcon(context, friend, isCurrentUser)
                         }
                         marker.icon = photoIcon
                         mapView.invalidate()
@@ -466,16 +565,17 @@ private suspend fun updateFriendMarkers(
 }
 
 /**
- * Crea un placeholder simple (círculo verde) para mostrar inmediatamente
+ * Crea un placeholder simple (círculo verde o azul) para mostrar inmediatamente
  */
-private fun createPlaceholderIcon(context: Context): Drawable {
+private fun createPlaceholderIcon(context: Context, isCurrentUser: Boolean = false): Drawable {
     val size = 100
     val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     
     val paint = Paint().apply {
         isAntiAlias = true
-        color = 0xFF34C759.toInt() // Verde FindMy
+        // Azul para el usuario actual, verde para amigos
+        color = if (isCurrentUser) 0xFF007AFF.toInt() else 0xFF34C759.toInt()
         style = Paint.Style.FILL
     }
     
@@ -496,9 +596,10 @@ private fun createPlaceholderIcon(context: Context): Drawable {
  */
 private suspend fun createCircularMarkerIcon(
     context: Context,
-    friend: FriendLocation
+    friend: FriendLocation,
+    isCurrentUser: Boolean = false
 ): Drawable = withContext(Dispatchers.IO) {
-    android.util.Log.d("FindMyMapScreen", "      🖼️ Procesando foto para ${friend.nombre}")
+    android.util.Log.d("FindMyMapScreen", "      🖼️ Procesando foto para ${friend.nombre} (isCurrentUser: $isCurrentUser)")
     val size = 100 // Tamaño del marker en píxeles
     
     // Descargar la imagen del perfil
@@ -521,11 +622,12 @@ private suspend fun createCircularMarkerIcon(
         null
     }
     
-    // Crear bitmap circular con borde verde (estilo FindMy)
+    // Crear bitmap circular con borde azul para usuario actual, verde para amigos
+    val borderColor = if (isCurrentUser) 0xFF007AFF.toInt() else 0xFF34C759.toInt()
     val circularBitmap = createCircularBitmap(
         bitmap = bitmap,
         size = size,
-        borderColor = 0xFF34C759.toInt(), // Verde FindMy
+        borderColor = borderColor,
         borderWidth = 6f
     )
     

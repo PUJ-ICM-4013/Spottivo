@@ -141,9 +141,9 @@ class AuthRepository {
         
         val locationData = hashMapOf(
             "userId" to uid,
-            "lat" to lat,
-            "lng" to lng,
-            "lastUpdate" to System.currentTimeMillis()
+            "latitude" to lat,
+            "longitude" to lng,
+            "timestamp" to System.currentTimeMillis()
         )
 
         try {
