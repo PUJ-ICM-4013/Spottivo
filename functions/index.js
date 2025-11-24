@@ -8,6 +8,81 @@ const db = admin.firestore();
 const messaging = admin.messaging();
 
 // =====================================================
+// CLOUD FUNCTION: ENVIAR NOTIFICACIÓN DE CHAT
+// =====================================================
+/**
+ * Trigger cuando se crea un nuevo mensaje
+ * Envía notificación push al destinatario
+ */
+exports.sendChatNotification = functions.firestore
+    .document('chats/{chatId}/messages/{messageId}')
+    .onCreate(async (snapshot, context) => {
+        try {
+            const message = snapshot.data();
+            const chatId = context.params.chatId;
+            
+            // Obtener participantes del chat
+            const chatDoc = await db.collection('chats').doc(chatId).get();
+            if (!chatDoc.exists) {
+                console.log('Chat no encontrado');
+                return null;
+            }
+            
+            const participants = chatDoc.data().participants || [];
+            
+            // Encontrar el destinatario (el que NO es el emisor)
+            const recipientId = participants.find(id => id !== message.senderId);
+            
+            if (!recipientId) {
+                console.log('Destinatario no encontrado');
+                return null;
+            }
+            
+            // Obtener FCM token del destinatario
+            const recipientDoc = await db.collection('users').doc(recipientId).get();
+            if (!recipientDoc.exists) {
+                console.log('Usuario destinatario no encontrado');
+                return null;
+            }
+            
+            const recipientData = recipientDoc.data();
+            const fcmToken = recipientData.fcmToken;
+            
+            if (!fcmToken) {
+                console.log('Destinatario no tiene FCM token');
+                return null;
+            }
+            
+            // Crear payload de notificación
+            const payload = {
+                notification: {
+                    title: message.senderName,
+                    body: message.message,
+                    sound: 'default'
+                },
+                data: {
+                    type: 'chat_message',
+                    senderId: message.senderId,
+                    senderName: message.senderName,
+                    message: message.message,
+                    chatId: chatId
+                },
+                token: fcmToken
+            };
+            
+            // Enviar notificación
+            const response = await messaging.send(payload);
+            console.log('✅ Notificación enviada:', response);
+            
+            return response;
+            
+        } catch (error) {
+            console.error('❌ Error enviando notificación:', error);
+            return null;
+        }
+    });
+
+// =====================================================
 // 1. API REST (Express) - SERVICIOS Y HARDWARE CHECK
 // =====================================================
 const app = express();

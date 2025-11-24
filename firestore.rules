@@ -9,7 +9,34 @@ service cloud.firestore {
       
       // Subcolección de amigos
       match /friends/{friendId} {
+        // El dueño puede leer y escribir en su propia subcolección
         allow read, write: if request.auth != null && request.auth.uid == userId;
+        
+        // Permitir que un usuario se agregue como amigo en la subcollección de otro usuario
+        // Solo si el friendId del path coincide con quien está autenticado
+        // y el userId en el documento coincide con quien está autenticado
+        allow create: if request.auth != null && 
+          request.auth.uid == friendId &&
+          request.resource.data.userId == request.auth.uid;
+      }
+      
+      // Subcolección de solicitudes de amistad
+      match /friendRequests/{requestId} {
+        // El dueño puede leer sus solicitudes
+        allow read: if request.auth != null && request.auth.uid == userId;
+        
+        // Cualquier usuario autenticado puede crear una solicitud en la subcolección del receptor
+        // siempre que el receiverId coincida con el userId del documento padre
+        allow create: if request.auth != null && 
+          request.resource.data.receiverId == userId &&
+          request.resource.data.senderId == request.auth.uid;
+        
+        // Solo el dueño puede actualizar (aceptar/rechazar)
+        allow update: if request.auth != null && request.auth.uid == userId;
+        
+        // Permitir eliminar solicitudes
+        allow delete: if request.auth != null && 
+          (request.auth.uid == userId || request.auth.uid == resource.data.senderId);
       }
     }
     
@@ -23,6 +50,37 @@ service cloud.firestore {
     match /businesses/{businessId} {
       allow read: if true;
       allow write: if request.auth != null;
+    }
+    
+    // Chats - solo los participantes pueden leer y escribir
+    match /chats/{chatId} {
+      // Permitir lectura si el usuario está en los participantes
+      allow read: if request.auth != null && 
+        (resource == null || request.auth.uid in resource.data.participants);
+      
+      // Permitir crear el chat si el usuario autenticado está en la lista de participantes
+      allow create: if request.auth != null && 
+        request.auth.uid in request.resource.data.participants;
+      
+      // Permitir actualizar/eliminar si el usuario está en los participantes del documento existente
+      allow update, delete: if request.auth != null && 
+        request.auth.uid in resource.data.participants;
+      
+      // Subcolección de mensajes
+      match /messages/{messageId} {
+        // Los participantes del chat pueden leer todos los mensajes
+        allow read: if request.auth != null && 
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        
+        // Solo el remitente puede crear mensajes y debe ser participante del chat
+        allow create: if request.auth != null && 
+          request.auth.uid == request.resource.data.senderId &&
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        
+        // Permitir actualizar mensajes (para marcar como leído)
+        allow update: if request.auth != null && 
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
     }
   }
 }
