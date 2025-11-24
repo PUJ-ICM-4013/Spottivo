@@ -1,0 +1,148 @@
+{
+  "usuarios_prueba_bogota": [
+    {
+      "userId": "user_test_001",
+      "nombre": "María Rodríguez",
+      "email": "maria.rodriguez@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=1",
+      "isOnline": true,
+      "location": {
+        "latitude": 4.60971,
+        "longitude": -74.08175,
+        "address": "Centro Internacional, Bogotá"
+      }
+    },
+    {
+      "userId": "user_test_002",
+      "nombre": "Carlos Méndez",
+      "email": "carlos.mendez@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=12",
+      "isOnline": true,
+      "location": {
+        "latitude": 4.67694,
+        "longitude": -74.04834,
+        "address": "Usaquén, Bogotá"
+      }
+    },
+    {
+      "userId": "user_test_003",
+      "nombre": "Laura Gómez",
+      "email": "laura.gomez@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=5",
+      "isOnline": true,
+      "location": {
+        "latitude": 4.65894,
+        "longitude": -74.09378,
+        "address": "Zona T, Chapinero, Bogotá"
+      }
+    },
+    {
+      "userId": "user_test_004",
+      "nombre": "Andrés Torres",
+      "email": "andres.torres@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=15",
+      "isOnline": true,
+      "location": {
+        "latitude": 4.62389,
+        "longitude": -74.06445,
+        "address": "Parque de la 93, Bogotá"
+      }
+    },
+    {
+      "userId": "user_test_005",
+      "nombre": "Valentina Castro",
+      "email": "valentina.castro@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=9",
+      "isOnline": true,
+      "location": {
+        "latitude": 4.71099,
+        "longitude": -74.03506,
+        "address": "Centro Comercial Unicentro, Bogotá"
+      }
+    },
+    {
+      "userId": "user_test_006",
+      "nombre": "Diego Ramírez",
+      "email": "diego.ramirez@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=13",
+      "isOnline": false,
+      "location": {
+        "latitude": 4.59847,
+        "longitude": -74.07672,
+        "address": "Plaza de Bolívar, Candelaria, Bogotá"
+      }
+    },
+    {
+      "userId": "user_test_007",
+      "nombre": "Camila Vargas",
+      "email": "camila.vargas@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=10",
+      "isOnline": true,
+      "location": {
+        "latitude": 4.64778,
+        "longitude": -74.05854,
+        "address": "Parque El Virrey, Bogotá"
+      }
+    },
+    {
+      "userId": "user_test_008",
+      "nombre": "Santiago Morales",
+      "email": "santiago.morales@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=14",
+      "isOnline": true,
+      "location": {
+        "latitude": 4.66283,
+        "longitude": -74.05493,
+        "address": "Andino Shopping Center, Bogotá"
+      }
+    },
+    {
+      "userId": "user_test_009",
+      "nombre": "Isabella Fernández",
+      "email": "isabella.fernandez@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=16",
+      "isOnline": false,
+      "location": {
+        "latitude": 4.60389,
+        "longitude": -74.06556,
+        "address": "Museo del Oro, Bogotá"
+      }
+    },
+    {
+      "userId": "user_test_010",
+      "nombre": "Mateo Herrera",
+      "email": "mateo.herrera@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=11",
+      "isOnline": true,
+      "location": {
+        "latitude": 4.63890,
+        "longitude": -74.11023,
+        "address": "Salitre Mágico, Bogotá"
+      }
+    },
+    {
+      "userId": "user_test_011",
+      "nombre": "Sofía Jiménez",
+      "email": "sofia.jimenez@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=20",
+      "isOnline": true,
+      "location": {
+        "latitude": 4.68445,
+        "longitude": -74.05667,
+        "address": "Hacienda Santa Bárbara, Bogotá"
+      }
+    },
+    {
+      "userId": "user_test_012",
+      "nombre": "Sebastián Ruiz",
+      "email": "sebastian.ruiz@test.com",
+      "photoUrl": "https://i.pravatar.cc/150?img=17",
+      "isOnline": true,
+      "location": {
+        "latitude": 4.61278,
+        "longitude": -74.07056,
+        "address": "Av. Jiménez con Séptima, Bogotá"
+      }
+    }
+  ]
+}

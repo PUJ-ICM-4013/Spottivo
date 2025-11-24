@@ -1,0 +1,25 @@
+{
+  "name": "spottivo-1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cargar_usuarios_prueba.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PUJ-ICM-4013/Spottivo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/PUJ-ICM-4013/Spottivo/issues"
+  },
+  "homepage": "https://github.com/PUJ-ICM-4013/Spottivo#readme",
+  "dependencies": {
+    "firebase-admin": "^13.6.0",
+    "form-data": "^4.0.5"
+  }
+}

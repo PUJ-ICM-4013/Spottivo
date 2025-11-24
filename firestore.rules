@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Usuarios pueden leer y escribir su propio documento
+    match /users/{userId} {
+      allow read: if true; // Permitir leer cualquier usuario (para buscar amigos)
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Subcolección de amigos
+      match /friends/{friendId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Ubicaciones - permitir lectura a usuarios autenticados
+    match /locations/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Negocios - solo lectura pública
+    match /businesses/{businessId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}

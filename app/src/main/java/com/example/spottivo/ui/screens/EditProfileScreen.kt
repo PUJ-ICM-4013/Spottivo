@@ -37,10 +37,26 @@ fun EditProfileScreen(
     viewModel: ProfileViewModel
 ) {
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
+    
     var selectedImageUri by remember { mutableStateOf(viewModel.userPhotoUri?.let { Uri.parse(it) }) }
     var tempName by remember { mutableStateOf(viewModel.userName) }
-
     var photoUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Mostrar mensajes de éxito o error
+    LaunchedEffect(uiState.successMessage) {
+        uiState.successMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessages()
+        }
+    }
+    
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearMessages()
+        }
+    }
 
     // ---- Launchers ----
     val takePictureLauncher = rememberLauncherForActivityResult(
@@ -48,7 +64,10 @@ fun EditProfileScreen(
     ) { success ->
         if (success && photoUri != null) {
             selectedImageUri = photoUri
-            viewModel.userPhotoUri = photoUri.toString()
+            // Subir a Firebase Storage
+            photoUri?.let { uri ->
+                viewModel.uploadProfilePhoto(uri)
+            }
         }
     }
 
@@ -57,7 +76,8 @@ fun EditProfileScreen(
     ) { uri: Uri? ->
         if (uri != null) {
             selectedImageUri = uri
-            viewModel.userPhotoUri = uri.toString()
+            // Subir a Firebase Storage
+            viewModel.uploadProfilePhoto(uri)
         }
     }
 
@@ -219,21 +239,31 @@ fun EditProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Text(
-                text = "Hecho",
-                color = PrimaryPurple,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    textDecoration = TextDecoration.Underline
-                ),
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .clickable {
-                        // Actualiza el nombre en el ViewModel
-                        viewModel.userName = tempName
-                        // Regresa al perfil
-                        navController.popBackStack()
+            // Botón Guardar Cambios
+            Button(
+                onClick = {
+                    // Guardar nombre
+                    if (tempName != viewModel.userName) {
+                        viewModel.updateUserName(tempName)
                     }
-            )
+                    // Navegar de vuelta
+                    navController.popBackStack()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple),
+                enabled = !uiState.isUpdating
+            ) {
+                if (uiState.isUpdating) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Guardar Cambios", style = MaterialTheme.typography.titleMedium)
+                }
+            }
 
 
         }

@@ -10,11 +10,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.spottivo.ui.screens.*
 import com.example.spottivo.viewmodel.ProfileViewModel
+import com.example.spottivo.viewmodel.MapViewModel
 
 @Composable
 fun NavigationGraph(navController: NavHostController, innerPadding: PaddingValues) {
 
     val profileViewModel: ProfileViewModel = viewModel()
+    val mapViewModel: MapViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -22,7 +24,7 @@ fun NavigationGraph(navController: NavHostController, innerPadding: PaddingValue
         modifier = Modifier.padding(innerPadding)
     ) {
         composable(Screen.Search.route) { SearchScreen() }
-        composable(Screen.Map.route) { MapScreen() }
+        composable(Screen.Map.route) { FindMyMapScreen(viewModel = mapViewModel) }
         composable(Screen.Community.route) { CommunityScreen() }
 
         composable("profile") {

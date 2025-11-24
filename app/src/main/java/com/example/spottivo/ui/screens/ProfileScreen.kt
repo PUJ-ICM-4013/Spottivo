@@ -1,15 +1,21 @@
 package com.example.spottivo.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -17,12 +23,32 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.spottivo.R
+import com.example.spottivo.ui.AuthActivity
 import com.example.spottivo.ui.theme.PrimaryPurple
 import com.example.spottivo.viewmodel.ProfileViewModel
 
 @Composable
-fun ProfileScreen(navController: NavController,
-                  viewModel: ProfileViewModel = viewModel()) {
+fun ProfileScreen(
+    navController: NavController,
+    viewModel: ProfileViewModel = viewModel()
+) {
+    val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
+    
+    // Recargar perfil cuando se vuelve a esta pantalla
+    LaunchedEffect(Unit) {
+        viewModel.loadUserProfile()
+    }
+    
+    if (uiState.isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = PrimaryPurple)
+        }
+        return
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -149,7 +175,19 @@ fun ProfileScreen(navController: NavController,
                 if (index < options.size) {
                     ProfileOptionItem(
                         title = options[index].first,
-                        iconRes = options[index].second
+                        iconRes = options[index].second,
+                        onClick = {
+                            when(index) {
+                                4 -> {
+                                    // Cerrar sesión
+                                    viewModel.logout()
+                                    val intent = Intent(context, AuthActivity::class.java)
+                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    context.startActivity(intent)
+                                }
+                                // Aquí puedes agregar más acciones para los otros items
+                            }
+                        }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -161,10 +199,13 @@ fun ProfileScreen(navController: NavController,
 @Composable
 fun ProfileOptionItem(
     title: String,
-    iconRes: Int
+    iconRes: Int,
+    onClick: () -> Unit = {}
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

@@ -502,12 +502,6 @@ private fun decodePolyline(encoded: String): List<GeoPoint> {
     return path
 }
 
-private data class OsrmRouteResult(
-    val points: List<GeoPoint>,
-    val distanceKm: Double,
-    val durationMin: Double
-)
-
 /* ---------------- Utils ---------------- */
 
 private fun haversineMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
