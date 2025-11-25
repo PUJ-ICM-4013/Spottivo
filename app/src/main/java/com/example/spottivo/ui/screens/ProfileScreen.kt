@@ -1,6 +1,5 @@
 package com.example.spottivo.ui.screens
 
-import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,7 +22,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.spottivo.R
-import com.example.spottivo.ui.AuthActivity
 import com.example.spottivo.ui.theme.PrimaryPurple
 import com.example.spottivo.ui.components.AppLogo
 import com.example.spottivo.viewmodel.ProfileViewModel
@@ -159,8 +157,9 @@ fun ProfileScreen(
         
         // Profile Options
         LazyColumn {
-            items(5) { index ->
+            items(6) { index ->
                 val options = listOf(
+                    Pair("Mis Espacios Deportivos", R.drawable.ic_sports),
                     Pair("Configuración", R.drawable.ic_settings),
                     Pair("Favoritos", R.drawable.ic_favorite),
                     Pair("Ubicación", R.drawable.ic_location),
@@ -174,12 +173,17 @@ fun ProfileScreen(
                         iconRes = options[index].second,
                         onClick = {
                             when(index) {
-                                4 -> {
+                                0 -> {
+                                    // Mis Espacios Deportivos
+                                    navController.navigate("my_sport_places")
+                                }
+                                5 -> {
                                     // Cerrar sesión
                                     viewModel.logout()
-                                    val intent = Intent(context, AuthActivity::class.java)
-                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                    context.startActivity(intent)
+                                    navController.navigate("login_new") {
+                                        popUpTo(0) { inclusive = true }
+                                        launchSingleTop = true
+                                    }
                                 }
                                 // Aquí puedes agregar más acciones para los otros items
                             }

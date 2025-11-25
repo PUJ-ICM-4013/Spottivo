@@ -12,6 +12,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.spottivo.data.models.SportPlace
 import com.example.spottivo.ui.screens.*
 import com.example.spottivo.viewmodel.ProfileViewModel
 import com.example.spottivo.viewmodel.MapViewModel
@@ -68,7 +69,37 @@ fun NavigationGraph(navController: NavHostController, innerPadding: PaddingValue
                 onForgotPassword = { navController.navigate("forgot_password") }
             )
         }
-        composable(Screen.Search.route) { SearchScreen() }
+        composable(Screen.Search.route) { SearchScreen(navController = navController) }
+        composable("create_sport_place") {
+            CreateSportPlaceScreen(
+                onBack = { navController.popBackStack() },
+                onSuccess = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        composable("my_sport_places") {
+            MySportPlacesScreen(
+                onBack = { navController.popBackStack() },
+                onCreateNew = { navController.navigate("create_sport_place") },
+                onEditPlace = { place ->
+                    navController.navigate("edit_sport_place/${place.id}")
+                }
+            )
+        }
+        composable(
+            route = "edit_sport_place/{placeId}",
+            arguments = listOf(navArgument("placeId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val placeId = backStackEntry.arguments?.getString("placeId") ?: ""
+            EditSportPlaceScreen(
+                placeId = placeId,
+                onBack = { navController.popBackStack() },
+                onSuccess = {
+                    navController.popBackStack()
+                }
+            )
+        }
         composable(Screen.Map.route) { FindMyMapScreen(viewModel = mapViewModel) }
         composable(Screen.Community.route) { 
             CommunityScreen(

@@ -82,5 +82,23 @@ service cloud.firestore {
           request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
       }
     }
+    
+    // Sitios deportivos - lectura pública, escritura para propietarios
+    match /sportPlaces/{placeId} {
+      // Cualquier usuario autenticado puede leer sitios activos
+      allow read: if request.auth != null;
+      
+      // Solo usuarios autenticados pueden crear sitios
+      allow create: if request.auth != null && 
+        request.resource.data.propietarioEmail == request.auth.token.email;
+      
+      // Solo el propietario puede actualizar su sitio
+      allow update: if request.auth != null && 
+        resource.data.propietarioEmail == request.auth.token.email;
+      
+      // Solo el propietario puede eliminar (soft delete)
+      allow delete: if request.auth != null && 
+        resource.data.propietarioEmail == request.auth.token.email;
+    }
   }
 }
