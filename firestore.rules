@@ -84,21 +84,43 @@ service cloud.firestore {
     }
     
     // Sitios deportivos - lectura pública, escritura para propietarios
-    match /sportPlaces/{placeId} {
+    match /sport_places/{placeId} {
       // Cualquier usuario autenticado puede leer sitios activos
       allow read: if request.auth != null;
       
       // Solo usuarios autenticados pueden crear sitios
       allow create: if request.auth != null && 
-        request.resource.data.propietarioEmail == request.auth.token.email;
+        request.resource.data.propietarioId == request.auth.uid;
       
       // Solo el propietario puede actualizar su sitio
       allow update: if request.auth != null && 
-        resource.data.propietarioEmail == request.auth.token.email;
+        (resource.data.propietarioId == request.auth.uid || 
+         resource.data.propietarioEmail == request.auth.token.email);
       
       // Solo el propietario puede eliminar (soft delete)
       allow delete: if request.auth != null && 
-        resource.data.propietarioEmail == request.auth.token.email;
+        (resource.data.propietarioId == request.auth.uid || 
+         resource.data.propietarioEmail == request.auth.token.email);
+    }
+    
+    // Sitios deportivos (colección principal actual)
+    match /sportPlaces/{placeId} {
+      // Cualquier usuario autenticado puede leer
+      allow read: if request.auth != null;
+      
+      // Solo usuarios autenticados pueden crear, y el propietarioId debe coincidir
+      allow create: if request.auth != null && 
+        request.resource.data.propietarioId == request.auth.uid;
+      
+      // Solo el propietario puede actualizar
+      allow update: if request.auth != null && 
+        (resource.data.propietarioId == request.auth.uid || 
+         resource.data.propietarioEmail == request.auth.token.email);
+      
+      // Solo el propietario puede eliminar
+      allow delete: if request.auth != null && 
+        (resource.data.propietarioId == request.auth.uid || 
+         resource.data.propietarioEmail == request.auth.token.email);
     }
   }
 }

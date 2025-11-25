@@ -124,6 +124,29 @@ fun ProfileScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Badge de rol
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (viewModel.userRole == "Dueño de sitio deportivo") 
+                            PrimaryPurple.copy(alpha = 0.1f) 
+                        else 
+                            MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        Text(
+                            text = viewModel.userRole,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (viewModel.userRole == "Dueño de sitio deportivo") 
+                                PrimaryPurple 
+                            else 
+                                MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
                 }
 
                 // Botón de editar en la esquina inferior derecha del card

@@ -51,6 +51,8 @@ class ProfileViewModel(
         private set
     var userId by mutableStateOf("")
         private set
+    var userRole by mutableStateOf("Deportista")
+        private set
     
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
@@ -94,6 +96,36 @@ class ProfileViewModel(
                 } else {
                     userName = "Usuario"
                     Log.w(TAG, "Documento de usuario no encontrado en Firestore")
+                }
+                
+                // Verificar si el usuario tiene espacios deportivos
+                Log.d(TAG, "Verificando espacios deportivos para userId: $userId, email: $userEmail")
+                
+                try {
+                    // Buscar en la colección correcta: "sportPlaces" (sin guion bajo)
+                    val sportPlacesQuery = firestore.collection("sportPlaces")
+                        .whereEqualTo("propietarioId", userId)
+                        .get()
+                        .await()
+                    
+                    Log.d(TAG, "Espacios encontrados para userId=$userId: ${sportPlacesQuery.documents.size}")
+                    sportPlacesQuery.documents.forEach { doc ->
+                        Log.d(TAG, "  ✓ Espacio: ${doc.getString("nombre")} - activo: ${doc.getBoolean("activo")}")
+                    }
+                    
+                    // Contar solo los activos
+                    val activePlaces = sportPlacesQuery.documents.filter { it.getBoolean("activo") == true }
+                    
+                    userRole = if (activePlaces.isNotEmpty()) {
+                        "Dueño de sitio deportivo"
+                    } else {
+                        "Deportista"
+                    }
+                    
+                    Log.d(TAG, "Rol del usuario: $userRole (${activePlaces.size} espacios activos)")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error al verificar espacios deportivos, usando rol por defecto", e)
+                    userRole = "Deportista"
                 }
                 
                 _uiState.value = _uiState.value.copy(isLoading = false)
