@@ -25,6 +25,7 @@ import coil.compose.AsyncImage
 import com.example.spottivo.R
 import com.example.spottivo.ui.AuthActivity
 import com.example.spottivo.ui.theme.PrimaryPurple
+import com.example.spottivo.ui.components.AppLogo
 import com.example.spottivo.viewmodel.ProfileViewModel
 
 @Composable
@@ -67,12 +68,7 @@ fun ProfileScreen(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
             )
-            Icon(
-                painter = painterResource(id = R.drawable.ic_spottivo_logo),
-                contentDescription = "Spottivo Logo",
-                modifier = Modifier.size(32.dp),
-                tint = PrimaryPurple
-            )
+            AppLogo(modifier = Modifier.size(48.dp))
         }
         
         Spacer(modifier = Modifier.height(24.dp))

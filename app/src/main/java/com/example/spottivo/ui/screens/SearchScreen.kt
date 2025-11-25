@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.spottivo.R
+import com.example.spottivo.ui.components.AppLogo
 import com.example.spottivo.ui.theme.PrimaryPurple
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,12 +39,7 @@ fun SearchScreen() {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_spottivo_logo),
-                contentDescription = "Spottivo Logo",
-                modifier = Modifier.size(32.dp),
-                tint = PrimaryPurple
-            )
+            AppLogo(modifier = Modifier.size(48.dp))
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "Spottivo",

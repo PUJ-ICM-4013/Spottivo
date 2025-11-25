@@ -209,6 +209,23 @@ class AuthRepository {
     fun isUserLoggedIn(): Boolean = auth.currentUser != null
 
     // ==========================================
+    // RESET PASSWORD (FORGOT PASSWORD FLOW)
+    // ==========================================
+    suspend fun sendPasswordReset(email: String): Result<String> {
+        return try {
+            if (email.isBlank()) return Result.failure(Exception("Email requerido"))
+            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                return Result.failure(Exception("Formato de email inválido"))
+            }
+            auth.sendPasswordResetEmail(email).await()
+            Result.success("Se envió el enlace de recuperación a $email")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error enviando reset password", e)
+            Result.failure(Exception(e.message ?: "Error al enviar correo de recuperación"))
+        }
+    }
+
+    // ==========================================
     // UTILIDADES PRIVADAS
     // ==========================================
     private fun updateUserStatus(userId: String, isOnline: Boolean, fcmToken: String) {

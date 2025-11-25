@@ -36,6 +36,7 @@ import com.example.spottivo.viewmodel.CommunityViewModel
 import com.example.spottivo.viewmodel.CommunityListViewModel
 import com.example.spottivo.viewmodel.Friend
 import com.example.spottivo.model.Community
+import com.example.spottivo.ui.components.AppLogo
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -130,12 +131,7 @@ fun CommunityScreen(
                 )
             }
             
-            Icon(
-                painter = painterResource(id = R.drawable.ic_spottivo_logo),
-                contentDescription = "Spottivo Logo",
-                modifier = Modifier.size(32.dp),
-                tint = PrimaryPurple
-            )
+            AppLogo(modifier = Modifier.size(40.dp))
         }
         
         Spacer(modifier = Modifier.height(16.dp))

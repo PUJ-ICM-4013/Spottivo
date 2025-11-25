@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.spottivo.R
 import com.example.spottivo.ui.theme.PrimaryPurple
+import com.example.spottivo.ui.components.AppLogo
 
 @Composable
 fun SpottivoHeader(
@@ -34,12 +35,7 @@ fun SpottivoHeader(
             modifier = Modifier.weight(1f)
         )
         if (showLogo) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_spottivo_logo),
-                contentDescription = "Spottivo Logo",
-                modifier = Modifier.size(32.dp),
-                tint = PrimaryPurple
-            )
+            AppLogo(modifier = Modifier.size(40.dp))
         }
     }
 }

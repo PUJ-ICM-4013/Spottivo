@@ -1,17 +1,17 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="120dp"
-    android:height="120dp"
-    android:viewportWidth="120"
-    android:viewportHeight="120">
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
     
-    <!-- Background Circle -->
+    <!-- White Background -->
     <path
-        android:fillColor="@color/spottivo_primary"
-        android:pathData="M60,60m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M0,0 L200,0 L200,200 L0,200 Z" />
     
-    <!-- Letter S -->
+    <!-- Purple Letter S - Bold and curved style matching the image -->
     <path
-        android:fillColor="@color/white"
-        android:pathData="M45,35 Q35,25 25,35 Q25,45 35,45 L55,45 Q65,45 65,55 Q65,65 55,65 L35,65 Q25,65 25,75 Q25,85 35,85 L75,85 Q85,85 85,75 Q85,65 75,65 L55,65 Q45,65 45,55 Q45,45 55,45 L75,45 Q85,45 85,35 Q85,25 75,25 L45,25 Q35,25 35,35 Z" />
+        android:fillColor="#8B3FBF"
+        android:pathData="M140,50 C150,50 160,55 165,65 C170,75 170,85 165,95 C160,100 155,105 145,110 L125,120 C120,122 118,125 118,130 C118,135 120,138 125,140 L145,140 C150,140 155,138 158,133 L175,140 C170,155 160,165 145,168 L125,168 C115,168 105,163 100,153 C95,143 95,133 100,123 C105,118 110,113 120,108 L140,98 C145,96 147,93 147,88 C147,83 145,80 140,78 L120,78 C115,78 110,80 107,85 L90,78 C95,63 105,53 120,50 L140,50 Z" />
     
 </vector>

@@ -1,0 +1,10 @@
+<resources>
+    <!-- Android 12+ SplashScreen customization to avoid the interim system icon screen -->
+    <style name="Theme.Spottivo" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowSplashScreenBackground">@color/background_dark</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/spottivo_logo</item>
+        <item name="android:windowSplashScreenAnimationDuration">300</item>
+    </style>
+
+    <style name="Theme.Spottivo.NoActionBar" parent="Theme.Spottivo" />
+</resources>

@@ -14,7 +14,9 @@ data class LoginUiState(
     val isLoading: Boolean = false,
     val user: User? = null,
     val errorMessage: String? = null,
-    val isLoginSuccessful: Boolean = false
+    val isLoginSuccessful: Boolean = false,
+    val passwordResetSent: Boolean = false,
+    val passwordResetMessage: String? = null
 )
 
 class LoginViewModel(
@@ -85,6 +87,10 @@ class LoginViewModel(
         _uiState.value = _uiState.value.copy(isLoginSuccessful = false)
     }
 
+    fun clearPasswordResetState() {
+        _uiState.value = _uiState.value.copy(passwordResetSent = false, passwordResetMessage = null)
+    }
+
     private fun isValidEmail(email: String): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
@@ -92,5 +98,32 @@ class LoginViewModel(
     fun logout() {
         authRepository.logout()
         _uiState.value = LoginUiState()
+    }
+
+    fun sendPasswordReset(email: String) {
+        if (email.isBlank()) {
+            _uiState.value = _uiState.value.copy(errorMessage = "El email es requerido")
+            return
+        }
+        if (!isValidEmail(email)) {
+            _uiState.value = _uiState.value.copy(errorMessage = "Formato de email inválido")
+            return
+        }
+        viewModelScope.launch {
+            val result = authRepository.sendPasswordReset(email)
+            if (result.isSuccess) {
+                _uiState.value = _uiState.value.copy(
+                    passwordResetSent = true,
+                    passwordResetMessage = result.getOrNull(),
+                    errorMessage = null
+                )
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    passwordResetSent = false,
+                    passwordResetMessage = null,
+                    errorMessage = result.exceptionOrNull()?.message
+                )
+            }
+        }
     }
 }

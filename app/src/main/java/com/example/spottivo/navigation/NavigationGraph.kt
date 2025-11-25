@@ -26,9 +26,48 @@ fun NavigationGraph(navController: NavHostController, innerPadding: PaddingValue
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Search.route,
+        startDestination = "splash", // splash first
         modifier = Modifier.padding(innerPadding)
     ) {
+        composable("splash") { SplashScreen(navController = navController) }
+        // New auth flow screens
+        composable("login_new") {
+            LoginScreen(
+                onNavigateToRegister = { navController.navigate("register_new") },
+                onLoginSuccess = {
+                    navController.navigate(Screen.Search.route) {
+                        popUpTo("login_new") { inclusive = true }
+                    }
+                },
+                onForgotPassword = { navController.navigate("forgot_password") }
+            )
+        }
+        composable("register_new") {
+            RegisterScreen(
+                onNavigateToLogin = { navController.navigate("login_new") },
+                onRegisterSuccess = {
+                    navController.navigate("login_new") {
+                        popUpTo("register_new") { inclusive = true }
+                    }
+                },
+                onNavigateToBusiness = { /* TODO: implementar ruta negocio */ }
+            )
+        }
+        composable("forgot_password") { 
+            ForgotPasswordScreen(navController = navController) 
+        }
+        // Legacy simple login screen for comparison
+        composable("login_old") {
+            LoginLegacyScreen(
+                onNavigateToRegister = { navController.navigate("register_new") },
+                onLoginSuccess = {
+                    navController.navigate(Screen.Search.route) {
+                        popUpTo("login_old") { inclusive = true }
+                    }
+                },
+                onForgotPassword = { navController.navigate("forgot_password") }
+            )
+        }
         composable(Screen.Search.route) { SearchScreen() }
         composable(Screen.Map.route) { FindMyMapScreen(viewModel = mapViewModel) }
         composable(Screen.Community.route) { 
