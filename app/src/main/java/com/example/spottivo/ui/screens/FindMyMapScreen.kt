@@ -87,6 +87,7 @@ fun FindMyMapScreen(
     val selectedFriend by viewModel.selectedFriend.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val myLocation by viewModel.myLocation.collectAsState()
+    val sportPlaces by viewModel.sportPlaces.collectAsState()
     
     // Cargar ubicación del usuario al iniciar
     LaunchedEffect(Unit) {
@@ -163,6 +164,7 @@ fun FindMyMapScreen(
     var mapView by remember { mutableStateOf<MapView?>(null) }
     var myLocationOverlay by remember { mutableStateOf<MyLocationNewOverlay?>(null) }
     val friendMarkers = remember { mutableStateMapOf<String, Marker>() }
+    val sportPlaceMarkers = remember { mutableStateMapOf<String, Marker>() }
     var routePolyline by remember { mutableStateOf<Polyline?>(null) }
     var destinationMarker by remember { mutableStateOf<Marker?>(null) }
     val httpClient = remember { OkHttpClient() }
@@ -170,6 +172,11 @@ fun FindMyMapScreen(
     // Bottom sheet para mostrar detalles del amigo
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
+    
+    // Bottom sheet para mostrar detalles del sitio deportivo
+    val sportPlaceSheetState = rememberModalBottomSheetState()
+    var showSportPlaceSheet by remember { mutableStateOf(false) }
+    var selectedSportPlace by remember { mutableStateOf<com.example.spottivo.data.models.SportPlace?>(null) }
     
     // Actualizar markers cuando cambian las ubicaciones
     LaunchedEffect(friendsLocations) {
@@ -185,6 +192,23 @@ fun FindMyMapScreen(
                     showBottomSheet = true
                 },
                 scope = scope
+            )
+        }
+    }
+    
+    // Actualizar markers de sitios deportivos cuando cambian
+    LaunchedEffect(sportPlaces) {
+        android.util.Log.d("FindMyMapScreen", "🏟️ LaunchedEffect sitios: ${sportPlaces.size} sitios")
+        mapView?.let { mv ->
+            updateSportPlaceMarkers(
+                context = context,
+                mapView = mv,
+                sportPlaces = sportPlaces,
+                existingMarkers = sportPlaceMarkers,
+                onMarkerClick = { place ->
+                    selectedSportPlace = place
+                    showSportPlaceSheet = true
+                }
             )
         }
     }
@@ -472,6 +496,33 @@ fun FindMyMapScreen(
                         )
                         mapView?.controller?.setZoom(18.0)
                         showBottomSheet = false
+                    }
+                )
+            }
+        }
+        
+        // Bottom sheet con detalles del sitio deportivo
+        if (showSportPlaceSheet && selectedSportPlace != null) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showSportPlaceSheet = false
+                    selectedSportPlace = null
+                },
+                sheetState = sportPlaceSheetState
+            ) {
+                SportPlaceDetailsSheet(
+                    sportPlace = selectedSportPlace!!,
+                    onClose = {
+                        showSportPlaceSheet = false
+                        selectedSportPlace = null
+                    },
+                    onNavigate = {
+                        // Centrar mapa en la ubicación del sitio
+                        mapView?.controller?.animateTo(
+                            GeoPoint(selectedSportPlace!!.latitud, selectedSportPlace!!.longitud)
+                        )
+                        mapView?.controller?.setZoom(18.0)
+                        showSportPlaceSheet = false
                     }
                 )
             }
@@ -881,6 +932,261 @@ private fun getTimeAgo(timestamp: Long): String {
     }
 }
 
+/**
+ * Bottom sheet con detalles del sitio deportivo seleccionado
+ */
+@Composable
+private fun SportPlaceDetailsSheet(
+    sportPlace: com.example.spottivo.data.models.SportPlace,
+    onClose: () -> Unit,
+    onNavigate: () -> Unit
+) {
+    val context = LocalContext.current
+    
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 32.dp)
+    ) {
+        // Galería de fotos
+        if (sportPlace.fotos.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                sportPlace.fotos.take(2).forEach { photoUrl ->
+                    coil.compose.AsyncImage(
+                        model = photoUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+        }
+        
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header con nombre y calificación
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = sportPlace.nombre,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (sportPlace.calificacion > 0) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "⭐",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = "${"%.1f".format(sportPlace.calificacion)} (${sportPlace.numeroCalificaciones} reseñas)",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Filled.Close, contentDescription = "Cerrar")
+                }
+            }
+            
+            // Descripción
+            if (sportPlace.descripcion.isNotEmpty()) {
+                Text(
+                    text = sportPlace.descripcion,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            // Tags de actividades
+            if (sportPlace.tags.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Actividades",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        sportPlace.tags.take(3).forEach { tag ->
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = tag,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Información de contacto
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Información",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                
+                // Dirección
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(
+                        Icons.Filled.GpsFixed,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = sportPlace.direccion,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                // Horarios
+                if (sportPlace.horarios.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = sportPlace.horarios,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
+                // Precio
+                if (sportPlace.precioDesde > 0 || sportPlace.precioHasta > 0) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "$",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        val precioText = if (sportPlace.precioHasta > sportPlace.precioDesde) {
+                            "$${"%.0f".format(sportPlace.precioDesde)}k - $${"%.0f".format(sportPlace.precioHasta)}k"
+                        } else {
+                            "$${"%.0f".format(sportPlace.precioDesde)}k"
+                        }
+                        Text(
+                            text = precioText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            
+            // Botones de contacto
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Contactar al propietario",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Botón de llamar
+                    if (sportPlace.telefono.isNotEmpty()) {
+                        OutlinedButton(
+                            onClick = {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                                    data = android.net.Uri.parse("tel:${sportPlace.telefono}")
+                                }
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("📞 Llamar")
+                        }
+                    }
+                    
+                    // Botón de WhatsApp
+                    if (sportPlace.whatsapp.isNotEmpty()) {
+                        OutlinedButton(
+                            onClick = {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                    data = android.net.Uri.parse("https://wa.me/${sportPlace.whatsapp.replace("+", "")}")
+                                }
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color(0xFF25D366)
+                            )
+                        ) {
+                            Text("WhatsApp")
+                        }
+                    }
+                }
+                
+                // Botón de email
+                if (sportPlace.email.isNotEmpty()) {
+                    OutlinedButton(
+                        onClick = {
+                            val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+                                data = android.net.Uri.parse("mailto:${sportPlace.email}")
+                            }
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("✉️ Enviar correo")
+                    }
+                }
+            }
+        }
+    }
+}
+
 /* ---------------- OSRM Routing ---------------- */
 
 private suspend fun fetchOsrmRoute(
@@ -949,6 +1255,180 @@ private fun decodePolyline(encoded: String): List<GeoPoint> {
         path.add(GeoPoint(lat / 1E5, lng / 1E5))
     }
     return path
+}
+
+/**
+ * Actualiza los markers de sitios deportivos en el mapa
+ */
+private suspend fun updateSportPlaceMarkers(
+    context: Context,
+    mapView: MapView,
+    sportPlaces: List<com.example.spottivo.data.models.SportPlace>,
+    existingMarkers: MutableMap<String, Marker>,
+    onMarkerClick: (com.example.spottivo.data.models.SportPlace) -> Unit
+) = withContext(Dispatchers.Main) {
+    android.util.Log.d("FindMyMapScreen", "🏟️ updateSportPlaceMarkers: ${sportPlaces.size} sitios")
+    
+    // Remover markers de sitios que ya no están en la lista
+    val currentPlaceIds = sportPlaces.map { "place_${it.id}" }.toSet()
+    val markersToRemove = existingMarkers.keys.filter { it.startsWith("place_") && it !in currentPlaceIds }
+    
+    markersToRemove.forEach { placeId ->
+        existingMarkers[placeId]?.let { marker ->
+            mapView.overlays.remove(marker)
+        }
+        existingMarkers.remove(placeId)
+    }
+    
+    // Agregar o actualizar markers de sitios deportivos
+    sportPlaces.forEach { place ->
+        val markerId = "place_${place.id}"
+        val existingMarker = existingMarkers[markerId]
+        
+        if (existingMarker != null) {
+            // Actualizar posición del marker existente
+            existingMarker.position = GeoPoint(place.latitud, place.longitud)
+            existingMarker.title = place.nombre
+            existingMarker.snippet = place.direccion
+        } else {
+            // Crear nuevo marker para sitio deportivo
+            try {
+                val marker = Marker(mapView).apply {
+                    position = GeoPoint(place.latitud, place.longitud)
+                    title = place.nombre
+                    snippet = place.direccion
+                    
+                    // Crear ícono personalizado con emoji según el primer tag
+                    icon = createSportPlaceMarkerIcon(context, place.tags.firstOrNull() ?: "")
+                    
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                    
+                    setOnMarkerClickListener { clickedMarker, _ ->
+                        onMarkerClick(place)
+                        true
+                    }
+                }
+                
+                mapView.overlays.add(marker)
+                existingMarkers[markerId] = marker
+                android.util.Log.d("FindMyMapScreen", "  ✓ Marker agregado para: ${place.nombre} (${place.tags.firstOrNull()})")
+                
+            } catch (e: Exception) {
+                android.util.Log.e("FindMyMapScreen", "  ✗ Error creando marker para ${place.nombre}", e)
+            }
+        }
+    }
+    
+    mapView.invalidate()
+    android.util.Log.d("FindMyMapScreen", "✅ Total markers en mapa: ${mapView.overlays.size}")
+}
+
+/**
+ * Obtiene el recurso de ícono según el tag del deporte
+ */
+private fun getSportIconResource(tag: String): Int {
+    return when (tag) {
+        "Gimnasio" -> android.R.drawable.star_big_on
+        "CrossFit" -> android.R.drawable.star_big_on
+        "Yoga" -> android.R.drawable.star_big_on
+        "Pilates" -> android.R.drawable.star_big_on
+        "Natación" -> android.R.drawable.star_big_on
+        "Tenis" -> android.R.drawable.star_big_on
+        "Fútbol" -> android.R.drawable.star_big_on
+        "Baloncesto" -> android.R.drawable.star_big_on
+        "Voleibol" -> android.R.drawable.star_big_on
+        "Artes Marciales" -> android.R.drawable.star_big_on
+        "Boxeo" -> android.R.drawable.star_big_on
+        "Ciclismo" -> android.R.drawable.star_big_on
+        "Atletismo" -> android.R.drawable.star_big_on
+        "Escalada" -> android.R.drawable.star_big_on
+        "Pádel" -> android.R.drawable.star_big_on
+        "Squash" -> android.R.drawable.star_big_on
+        "Spinning" -> android.R.drawable.star_big_on
+        "Entrenamiento Funcional" -> android.R.drawable.star_big_on
+        "Calistenia" -> android.R.drawable.star_big_on
+        "Parkour" -> android.R.drawable.star_big_on
+        else -> android.R.drawable.ic_dialog_map
+    }
+}
+
+/**
+ * Crea un marcador personalizado con el emoji del deporte
+ */
+private fun createSportPlaceMarkerIcon(context: Context, tag: String): Drawable {
+    // Emojis según el tipo de deporte
+    val emoji = when (tag) {
+        "Gimnasio" -> "💪"
+        "CrossFit" -> "🏋️"
+        "Yoga" -> "🧘"
+        "Pilates" -> "🤸"
+        "Natación" -> "🏊"
+        "Tenis" -> "🎾"
+        "Fútbol" -> "⚽"
+        "Baloncesto" -> "🏀"
+        "Voleibol" -> "🏐"
+        "Artes Marciales" -> "🥋"
+        "Boxeo" -> "🥊"
+        "Ciclismo" -> "🚴"
+        "Atletismo" -> "🏃"
+        "Escalada" -> "🧗"
+        "Pádel" -> "🎾"
+        "Squash" -> "🎾"
+        "Spinning" -> "🚴"
+        "Entrenamiento Funcional" -> "💪"
+        "Calistenia" -> "🤸"
+        "Parkour" -> "🤸"
+        else -> "📍"
+    }
+    
+    // Color según el tipo de deporte
+    val color = when (tag) {
+        "Gimnasio", "CrossFit", "Entrenamiento Funcional" -> 0xFFFF5722.toInt() // Rojo-naranja
+        "Yoga", "Pilates" -> 0xFF9C27B0.toInt() // Púrpura
+        "Natación" -> 0xFF2196F3.toInt() // Azul
+        "Tenis", "Pádel", "Squash" -> 0xFF4CAF50.toInt() // Verde
+        "Fútbol" -> 0xFF8BC34A.toInt() // Verde claro
+        "Baloncesto" -> 0xFFFF9800.toInt() // Naranja
+        "Voleibol" -> 0xFFFFC107.toInt() // Amarillo
+        "Artes Marciales", "Boxeo" -> 0xFFF44336.toInt() // Rojo
+        "Ciclismo", "Spinning" -> 0xFF03A9F4.toInt() // Azul claro
+        "Atletismo" -> 0xFF00BCD4.toInt() // Cyan
+        "Escalada" -> 0xFF795548.toInt() // Marrón
+        "Calistenia", "Parkour" -> 0xFF607D8B.toInt() // Gris azulado
+        else -> 0xFF9E9E9E.toInt() // Gris
+    }
+    
+    // Crear bitmap con el emoji y fondo circular
+    val size = 120
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    
+    // Dibujar círculo de fondo
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        this.color = color
+        style = Paint.Style.FILL
+    }
+    canvas.drawCircle(size / 2f, size / 2f, size / 2.5f, paint)
+    
+    // Dibujar borde blanco
+    paint.apply {
+        this.color = 0xFFFFFFFF.toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = 6f
+    }
+    canvas.drawCircle(size / 2f, size / 2f, size / 2.5f, paint)
+    
+    // Dibujar emoji
+    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        this.color = 0xFFFFFFFF.toInt()
+        textSize = size / 2.2f
+        textAlign = Paint.Align.CENTER
+    }
+    val textBounds = Rect()
+    textPaint.getTextBounds(emoji, 0, emoji.length, textBounds)
+    canvas.drawText(emoji, size / 2f, size / 2f - textBounds.exactCenterY(), textPaint)
+    
+    return BitmapDrawable(context.resources, bitmap)
 }
 
  

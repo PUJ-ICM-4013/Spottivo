@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.spottivo.data.models.AddressResult
 import com.example.spottivo.data.models.FriendLocation
+import com.example.spottivo.data.models.SportPlace
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -41,6 +42,9 @@ class MapViewModel : ViewModel() {
     private val _myLocation = MutableStateFlow<FriendLocation?>(null)
     val myLocation: StateFlow<FriendLocation?> = _myLocation.asStateFlow()
     
+    private val _sportPlaces = MutableStateFlow<List<SportPlace>>(emptyList())
+    val sportPlaces: StateFlow<List<SportPlace>> = _sportPlaces.asStateFlow()
+    
     private var locationsListener: ListenerRegistration? = null
     
     companion object {
@@ -49,6 +53,7 @@ class MapViewModel : ViewModel() {
     
     init {
         startListeningToFriendsLocations()
+        loadSportPlaces()
     }
     
     /**
@@ -275,6 +280,60 @@ class MapViewModel : ViewModel() {
     }
     
     /**
+     * Cargar sitios deportivos activos desde Firestore
+     */
+    private fun loadSportPlaces() {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "🏟️ Cargando sitios deportivos...")
+                
+                val placesSnapshot = firestore
+                    .collection("sportPlaces")
+                    .whereEqualTo("activo", true)
+                    .get()
+                    .await()
+                
+                val places = placesSnapshot.documents.mapNotNull { doc ->
+                    try {
+                        SportPlace(
+                            id = doc.id,
+                            nombre = doc.getString("nombre") ?: "",
+                            descripcion = doc.getString("descripcion") ?: "",
+                            tags = (doc.get("tags") as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
+                            fotos = (doc.get("fotos") as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
+                            latitud = doc.getDouble("latitud") ?: 0.0,
+                            longitud = doc.getDouble("longitud") ?: 0.0,
+                            direccion = doc.getString("direccion") ?: "",
+                            telefono = doc.getString("telefono") ?: "",
+                            email = doc.getString("email") ?: "",
+                            whatsapp = doc.getString("whatsapp") ?: "",
+                            propietarioId = doc.getString("propietarioId") ?: "",
+                            propietarioEmail = doc.getString("propietarioEmail") ?: "",
+                            propietarioNombre = doc.getString("propietarioNombre") ?: "",
+                            horarios = doc.getString("horarios") ?: "",
+                            precioDesde = doc.getDouble("precioDesde") ?: 0.0,
+                            precioHasta = doc.getDouble("precioHasta") ?: 0.0,
+                            calificacion = doc.getDouble("calificacion") ?: 0.0,
+                            numeroCalificaciones = (doc.getLong("numeroCalificaciones") ?: 0).toInt(),
+                            activo = doc.getBoolean("activo") ?: true,
+                            fechaCreacion = doc.getTimestamp("fechaCreacion")
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error parseando sitio deportivo ${doc.id}", e)
+                        null
+                    }
+                }.filter { it.latitud != 0.0 && it.longitud != 0.0 } // Solo sitios con ubicación válida
+                
+                _sportPlaces.value = places
+                Log.d(TAG, "✅ ${places.size} sitios deportivos cargados")
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error cargando sitios deportivos", e)
+            }
+        }
+    }
+    
+    /**
      * Refrescar manualmente las ubicaciones
      */
     fun refresh() {
@@ -282,6 +341,7 @@ class MapViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             getCurrentUserLocation()
+            loadSportPlaces() // También refrescar sitios deportivos
             // Esperar un momento para dar feedback visual
             kotlinx.coroutines.delay(500)
             _isLoading.value = false
