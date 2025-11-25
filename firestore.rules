@@ -122,5 +122,64 @@ service cloud.firestore {
         (resource.data.propietarioId == request.auth.uid || 
          resource.data.propietarioEmail == request.auth.token.email);
     }
+    
+    // Comunidades
+    match /communities/{communityId} {
+      // Usuarios autenticados pueden leer comunidades públicas
+      allow read: if request.auth != null;
+      
+      // Usuarios autenticados pueden crear comunidades
+      allow create: if request.auth != null && 
+        request.resource.data.creatorId == request.auth.uid;
+      
+      // Solo el creador puede actualizar la comunidad
+      allow update: if request.auth != null && 
+        resource.data.creatorId == request.auth.uid;
+      
+      // Solo el creador puede eliminar la comunidad
+      allow delete: if request.auth != null && 
+        resource.data.creatorId == request.auth.uid;
+      
+      // Subcolección de miembros
+      match /members/{memberId} {
+        // Los miembros pueden leer la lista de miembros
+        allow read: if request.auth != null;
+        
+        // Cualquier usuario autenticado puede unirse (crear su propio documento de miembro)
+        allow create: if request.auth != null && 
+          request.resource.data.userId == request.auth.uid;
+        
+        // Solo el usuario puede actualizar su propio documento de miembro
+        allow update: if request.auth != null && 
+          (request.auth.uid == memberId || 
+           get(/databases/$(database)/documents/communities/$(communityId)).data.creatorId == request.auth.uid);
+        
+        // El usuario puede eliminarse a sí mismo, o el creador puede eliminar a otros
+        allow delete: if request.auth != null && 
+          (request.auth.uid == memberId || 
+           get(/databases/$(database)/documents/communities/$(communityId)).data.creatorId == request.auth.uid);
+      }
+      
+      // Subcolección de mensajes
+      match /messages/{messageId} {
+        // Los miembros pueden leer los mensajes
+        allow read: if request.auth != null && 
+          exists(/databases/$(database)/documents/communities/$(communityId)/members/$(request.auth.uid));
+        
+        // Los miembros pueden crear mensajes
+        allow create: if request.auth != null && 
+          request.resource.data.senderId == request.auth.uid &&
+          exists(/databases/$(database)/documents/communities/$(communityId)/members/$(request.auth.uid));
+        
+        // Los miembros pueden actualizar mensajes (para marcar como leído)
+        allow update: if request.auth != null && 
+          exists(/databases/$(database)/documents/communities/$(communityId)/members/$(request.auth.uid));
+        
+        // Solo el remitente o el creador de la comunidad pueden eliminar mensajes
+        allow delete: if request.auth != null && 
+          (request.auth.uid == resource.data.senderId || 
+           get(/databases/$(database)/documents/communities/$(communityId)).data.creatorId == request.auth.uid);
+      }
+    }
   }
 }

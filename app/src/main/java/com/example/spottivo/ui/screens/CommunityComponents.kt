@@ -154,9 +154,10 @@ fun CreateCommunityDialog(
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var isPublic by remember { mutableStateOf(true) }
+    var isCreating by remember { mutableStateOf(false) }
     val context = LocalContext.current
     
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(onDismissRequest = { if (!isCreating) onDismiss() }) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -181,7 +182,8 @@ fun CreateCommunityDialog(
                     onValueChange = { nombre = it },
                     label = { Text("Nombre de la comunidad") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !isCreating
                 )
                 
                 OutlinedTextField(
@@ -190,7 +192,8 @@ fun CreateCommunityDialog(
                     label = { Text("Descripción") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
-                    maxLines = 5
+                    maxLines = 5,
+                    enabled = !isCreating
                 )
                 
                 Row(
@@ -205,7 +208,8 @@ fun CreateCommunityDialog(
                     
                     Switch(
                         checked = isPublic,
-                        onCheckedChange = { isPublic = it }
+                        onCheckedChange = { isPublic = it },
+                        enabled = !isCreating
                     )
                 }
                 
@@ -215,21 +219,34 @@ fun CreateCommunityDialog(
                 ) {
                     Spacer(Modifier.weight(1f))
                     
-                    TextButton(onClick = onDismiss) {
+                    TextButton(
+                        onClick = onDismiss,
+                        enabled = !isCreating
+                    ) {
                         Text("Cancelar")
                     }
                     
                     Button(
                         onClick = {
                             if (nombre.isNotBlank() && descripcion.isNotBlank()) {
+                                isCreating = true
+                                android.util.Log.d("CreateCommunityDialog", "🚀 Iniciando creación de comunidad: $nombre")
+                                
                                 communityListViewModel.createCommunity(
                                     nombre = nombre,
                                     descripcion = descripcion,
                                     photoUri = null,
                                     isPublic = isPublic,
                                     onSuccess = { communityId ->
-                                        Toast.makeText(context, "Comunidad creada", Toast.LENGTH_SHORT).show()
+                                        android.util.Log.d("CreateCommunityDialog", "✅ Comunidad creada con ID: $communityId")
+                                        isCreating = false
+                                        Toast.makeText(context, "Comunidad '$nombre' creada exitosamente", Toast.LENGTH_LONG).show()
                                         onCommunityCreated(communityId)
+                                    },
+                                    onError = { error ->
+                                        android.util.Log.e("CreateCommunityDialog", "❌ Error: $error")
+                                        isCreating = false
+                                        Toast.makeText(context, "Error: $error", Toast.LENGTH_LONG).show()
                                     }
                                 )
                             } else {
@@ -239,9 +256,23 @@ fun CreateCommunityDialog(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = PrimaryPurple
                         ),
-                        enabled = nombre.isNotBlank() && descripcion.isNotBlank()
+                        enabled = !isCreating && nombre.isNotBlank() && descripcion.isNotBlank()
                     ) {
-                        Text("Crear")
+                        if (isCreating) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                                Text("Creando...")
+                            }
+                        } else {
+                            Text("Crear")
+                        }
                     }
                 }
             }

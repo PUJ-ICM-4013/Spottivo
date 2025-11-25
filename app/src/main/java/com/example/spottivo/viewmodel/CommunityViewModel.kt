@@ -189,25 +189,44 @@ class CommunityListViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
     
+    companion object {
+        private const val TAG = "CommunityListViewModel"
+    }
+    
     init {
         loadCommunities()
     }
     
     private fun loadCommunities() {
+        Log.d(TAG, "🔄 Iniciando carga de comunidades...")
+        
         viewModelScope.launch {
             _isLoading.value = true
             
-            // Cargar comunidades públicas
-            repository.getAllPublicCommunities().collect { communities ->
-                _allCommunities.value = communities
+            try {
+                // Cargar comunidades públicas
+                repository.getAllPublicCommunities().collect { communities ->
+                    Log.d(TAG, "✅ Recibidas ${communities.size} comunidades públicas")
+                    _allCommunities.value = communities
+                    _isLoading.value = false
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error cargando comunidades públicas", e)
+                _error.value = e.message
                 _isLoading.value = false
             }
         }
         
         viewModelScope.launch {
-            // Cargar mis comunidades
-            repository.getMyCommunities().collect { communities ->
-                _myCommunities.value = communities
+            try {
+                // Cargar mis comunidades
+                repository.getMyCommunities().collect { communities ->
+                    Log.d(TAG, "✅ Recibidas ${communities.size} comunidades del usuario")
+                    _myCommunities.value = communities
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error cargando mis comunidades", e)
+                _error.value = e.message
             }
         }
     }
@@ -217,31 +236,47 @@ class CommunityListViewModel : ViewModel() {
         descripcion: String,
         photoUri: Uri?,
         isPublic: Boolean = true,
-        onSuccess: (String) -> Unit
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit = {}
     ) {
         viewModelScope.launch {
-            _isLoading.value = true
-            
-            var photoUrl = ""
-            
-            // Si hay foto, subirla primero
-            if (photoUri != null) {
-                val tempCommunityId = "temp_${System.currentTimeMillis()}"
-                val uploadResult = repository.uploadCommunityPhoto(tempCommunityId, photoUri)
-                if (uploadResult.isSuccess) {
-                    photoUrl = uploadResult.getOrNull() ?: ""
+            try {
+                _isLoading.value = true
+                Log.d(TAG, "🚀 Creando comunidad: $nombre")
+                
+                var photoUrl = ""
+                
+                // Si hay foto, subirla primero
+                if (photoUri != null) {
+                    val tempCommunityId = "temp_${System.currentTimeMillis()}"
+                    val uploadResult = repository.uploadCommunityPhoto(tempCommunityId, photoUri)
+                    if (uploadResult.isSuccess) {
+                        photoUrl = uploadResult.getOrNull() ?: ""
+                    } else {
+                        Log.e(TAG, "❌ Error subiendo foto: ${uploadResult.exceptionOrNull()?.message}")
+                    }
                 }
-            }
-            
-            val result = repository.createCommunity(nombre, descripcion, photoUrl, isPublic)
-            
-            _isLoading.value = false
-            
-            if (result.isSuccess) {
-                val communityId = result.getOrNull() ?: ""
-                onSuccess(communityId)
-            } else {
-                _error.value = result.exceptionOrNull()?.message
+                
+                val result = repository.createCommunity(nombre, descripcion, photoUrl, isPublic)
+                
+                _isLoading.value = false
+                
+                if (result.isSuccess) {
+                    val communityId = result.getOrNull() ?: ""
+                    Log.d(TAG, "✅ Comunidad creada exitosamente: $communityId")
+                    onSuccess(communityId)
+                } else {
+                    val errorMessage = result.exceptionOrNull()?.message ?: "Error desconocido"
+                    Log.e(TAG, "❌ Error creando comunidad: $errorMessage")
+                    _error.value = errorMessage
+                    onError(errorMessage)
+                }
+            } catch (e: Exception) {
+                _isLoading.value = false
+                val errorMessage = e.message ?: "Error inesperado"
+                Log.e(TAG, "❌ Excepción creando comunidad", e)
+                _error.value = errorMessage
+                onError(errorMessage)
             }
         }
     }

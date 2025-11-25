@@ -95,41 +95,35 @@ class CommunityRepository {
      * Obtener todas las comunidades públicas
      */
     fun getAllPublicCommunities(): Flow<List<Community>> = callbackFlow {
-        // Hacer una consulta única primero
-        firestore.collection(COMMUNITIES_COLLECTION)
-            .whereEqualTo("isPublic", true)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                val communities = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(Community::class.java)?.copy(id = doc.id)
-                }
-                Log.d(TAG, "✅ ${communities.size} comunidades públicas encontradas (consulta única)")
-                trySend(communities)
-            }
-            .addOnFailureListener { error ->
-                Log.e(TAG, "❌ Error obteniendo comunidades", error)
-                trySend(emptyList())
-            }
-        
-        // Intentar también el listener (cuando el índice esté listo funcionará)
         val listener = firestore.collection(COMMUNITIES_COLLECTION)
             .whereEqualTo("isPublic", true)
-            .orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    Log.e(TAG, "❌ Error escuchando comunidades (esperando índice)", error)
+                    Log.e(TAG, "❌ Error escuchando comunidades", error)
+                    trySend(emptyList())
                     return@addSnapshotListener
                 }
                 
                 val communities = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(Community::class.java)?.copy(id = doc.id)
+                    try {
+                        doc.toObject(Community::class.java)?.copy(id = doc.id)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error convirtiendo comunidad ${doc.id}", e)
+                        null
+                    }
                 } ?: emptyList()
                 
-                Log.d(TAG, "✅ ${communities.size} comunidades públicas encontradas (listener)")
-                trySend(communities)
+                // Ordenar manualmente por fecha de creación (más reciente primero)
+                val sortedCommunities = communities.sortedByDescending { it.createdAt }
+                
+                Log.d(TAG, "✅ ${sortedCommunities.size} comunidades públicas encontradas")
+                trySend(sortedCommunities)
             }
         
-        awaitClose { listener.remove() }
+        awaitClose { 
+            Log.d(TAG, "Cerrando listener de comunidades públicas")
+            listener.remove() 
+        }
     }
     
     /**
@@ -138,17 +132,19 @@ class CommunityRepository {
     fun getMyCommunities(): Flow<List<Community>> = callbackFlow {
         val currentUserId = auth.currentUser?.uid
         if (currentUserId == null) {
+            Log.e(TAG, "❌ Usuario no autenticado en getMyCommunities")
             trySend(emptyList())
             close()
             return@callbackFlow
         }
+        
+        Log.d(TAG, "Iniciando escucha de mis comunidades para usuario: $currentUserId")
         
         val listener = firestore.collectionGroup(MEMBERS_COLLECTION)
             .whereEqualTo("userId", currentUserId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e(TAG, "❌ Error escuchando mis comunidades", error)
-                    // Enviar lista vacía en lugar de cerrar el Flow
                     trySend(emptyList())
                     return@addSnapshotListener
                 }
@@ -157,28 +153,56 @@ class CommunityRepository {
                     doc.reference.parent.parent?.id
                 } ?: emptyList()
                 
+                Log.d(TAG, "📋 IDs de comunidades encontradas: $communityIds")
+                
                 if (communityIds.isEmpty()) {
+                    Log.d(TAG, "No hay comunidades para este usuario")
                     trySend(emptyList())
                     return@addSnapshotListener
                 }
                 
-                // Obtener detalles de cada comunidad usando document IDs
-                firestore.collection(COMMUNITIES_COLLECTION)
-                    .whereIn(FieldPath.documentId(), communityIds)
-                    .get()
-                    .addOnSuccessListener { communitiesSnapshot ->
-                        val communities = communitiesSnapshot.documents.mapNotNull { doc ->
-                            doc.toObject(Community::class.java)?.copy(id = doc.id)
+                // Limitar a 10 IDs a la vez (Firebase tiene un límite de whereIn)
+                val chunkedIds = communityIds.chunked(10)
+                val allCommunities = mutableListOf<Community>()
+                var processedChunks = 0
+                
+                chunkedIds.forEach { chunk ->
+                    firestore.collection(COMMUNITIES_COLLECTION)
+                        .whereIn(FieldPath.documentId(), chunk)
+                        .get()
+                        .addOnSuccessListener { communitiesSnapshot ->
+                            val communities = communitiesSnapshot.documents.mapNotNull { doc ->
+                                try {
+                                    doc.toObject(Community::class.java)?.copy(id = doc.id)
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error convirtiendo comunidad ${doc.id}", e)
+                                    null
+                                }
+                            }
+                            allCommunities.addAll(communities)
+                            processedChunks++
+                            
+                            // Cuando se procesen todos los chunks, enviar resultado
+                            if (processedChunks == chunkedIds.size) {
+                                val sortedCommunities = allCommunities.sortedByDescending { it.createdAt }
+                                Log.d(TAG, "✅ ${sortedCommunities.size} comunidades del usuario encontradas")
+                                trySend(sortedCommunities)
+                            }
                         }
-                        trySend(communities)
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e(TAG, "❌ Error obteniendo detalles de comunidades", e)
-                        trySend(emptyList())
-                    }
+                        .addOnFailureListener { e ->
+                            Log.e(TAG, "❌ Error obteniendo detalles de comunidades chunk", e)
+                            processedChunks++
+                            if (processedChunks == chunkedIds.size) {
+                                trySend(allCommunities.sortedByDescending { it.createdAt })
+                            }
+                        }
+                }
             }
         
-        awaitClose { listener.remove() }
+        awaitClose { 
+            Log.d(TAG, "Cerrando listener de mis comunidades")
+            listener.remove() 
+        }
     }
     
     /**

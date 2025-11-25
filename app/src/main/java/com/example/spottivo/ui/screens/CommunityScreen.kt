@@ -352,40 +352,73 @@ fun CommunityScreen(
                         }
                         1 -> {
                             // Explorar Comunidades
-                            if (allCommunities.isEmpty()) {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            val isCommunitiesLoading by communityListViewModel.isLoading.collectAsState()
+                            
+                            when {
+                                isCommunitiesLoading && allCommunities.isEmpty() -> {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        CircularProgressIndicator()
-                                        Text(
-                                            text = "Cargando comunidades...",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            CircularProgressIndicator(color = PrimaryPurple)
+                                            Text(
+                                                text = "Cargando comunidades...",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
-                            } else {
-                                LazyColumn(
-                                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                                    contentPadding = PaddingValues(vertical = 8.dp)
-                                ) {
-                                    items(allCommunities) { community ->
-                                        val isMember = myCommunities.any { it.id == community.id }
-                                        CommunityCard(
-                                            community = community,
-                                            isMember = isMember,
-                                            showJoinButton = true,
-                                            onJoin = {
-                                                communityListViewModel.joinCommunity(community.id)
-                                                Toast.makeText(context, "Te uniste a ${community.nombre}", Toast.LENGTH_SHORT).show()
-                                            },
-                                            onClick = { onNavigateToCommunity(community.id) }
-                                        )
+                                !isCommunitiesLoading && allCommunities.isEmpty() -> {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_community),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(64.dp),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = "No hay comunidades públicas",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = "Sé el primero en crear una",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                                else -> {
+                                    LazyColumn(
+                                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                                        contentPadding = PaddingValues(vertical = 8.dp)
+                                    ) {
+                                        items(allCommunities) { community ->
+                                            val isMember = myCommunities.any { it.id == community.id }
+                                            CommunityCard(
+                                                community = community,
+                                                isMember = isMember,
+                                                showJoinButton = true,
+                                                onJoin = {
+                                                    communityListViewModel.joinCommunity(community.id)
+                                                    Toast.makeText(context, "Te uniste a ${community.nombre}", Toast.LENGTH_SHORT).show()
+                                                },
+                                                onClick = { onNavigateToCommunity(community.id) }
+                                            )
+                                        }
                                     }
                                 }
                             }
